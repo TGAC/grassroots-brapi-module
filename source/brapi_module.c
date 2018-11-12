@@ -23,8 +23,8 @@
 
 #include "brapi_module.h"
 #include "util_script.h"
-
-
+#include "brapi_location.h"
+#include "mongodb_tool.h"
 
 /*
  * STATIC FUNCTION DECLARATIONS
@@ -35,16 +35,16 @@ static int BrapiHandler (request_rec *req_p);
 static void RegisterHooks (apr_pool_t *pool_p);
 
 
-static void *MergeDirectoryConfig (apr_pool_t *pool_p, void *base_config_p, void *new_config_p);
+static void *MergeGrassrootsBrapiDirectoryConfig (apr_pool_t *pool_p, void *base_config_p, void *new_config_p);
 
 
-static void *MergeServerConfig (apr_pool_t *pool_p, void *base_config_p, void *vhost_config_p);
+static void *MergeGrassrootsBrapiServerConfig (apr_pool_t *pool_p, void *base_config_p, void *vhost_config_p);
 
 
-static void *CreateServerConfig (apr_pool_t *pool_p, server_rec *server_p);
+static void *CreateGrassrootsBrapiServerConfig (apr_pool_t *pool_p, server_rec *server_p);
 
 
-static void *CreateDirectoryConfig (apr_pool_t *pool_p, char *context_s);
+static void *CreateGrassrootsBrapiDirectoryConfig (apr_pool_t *pool_p, char *context_s);
 
 
 static ModBrapiConfig *CreateConfig (apr_pool_t *pool_p, server_rec *server_p);
@@ -53,6 +53,7 @@ static ModBrapiConfig *CreateConfig (apr_pool_t *pool_p, server_rec *server_p);
 static const char *SetGrassrootsURL (cmd_parms *cmd_p, void *cfg_p, const char *arg_s);
 
 
+static json_t *CreateMetadataResponse (const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages);
 
 
 /*
@@ -66,7 +67,7 @@ static const command_rec s_grassroots_brapi_directives [] =
 };
 
 
-static const char * const S_BRAPI_API_S = "/brapi/v1";
+static const char * const S_BRAPI_API_S = "/brapi/v1/";
 
 
 /*
@@ -78,10 +79,10 @@ static const char * const S_BRAPI_API_S = "/brapi/v1";
 module AP_MODULE_DECLARE_DATA grassroots_brapi_module =
 {
     STANDARD20_MODULE_STUFF,
-    CreateDirectoryConfig,   	// Per-directory configuration handler
-    MergeDirectoryConfig,   	// Merge handler for per-directory configurations
-    CreateServerConfig,				// Per-server configuration handler
-    MergeServerConfig,				// Merge handler for per-server configurations
+    CreateGrassrootsBrapiDirectoryConfig,   	// Per-directory configuration handler
+    MergeGrassrootsBrapiDirectoryConfig,   	// Merge handler for per-directory configurations
+    CreateGrassrootsBrapiServerConfig,				// Per-server configuration handler
+    MergeGrassrootsBrapiServerConfig,				// Merge handler for per-server configurations
 		s_grassroots_brapi_directives,			// Any directives we may have for httpd
     RegisterHooks    					// Our hook registering function
 };
@@ -191,7 +192,7 @@ static int BrapiHandler (request_rec *req_p)
    * If it is, we accept it and do our things, it not, we simply return DECLINED,
    * and Apache will try somewhere else.
    */
-  if ((req_p -> handler) && (strcmp (req_p -> handler, "brapi-handler") == 0))
+  if ((req_p -> handler) && (strcmp (req_p -> handler, "grassroots-brapi-handler") == 0))
   	{
   		if (req_p -> method_number == M_GET)
   			{
@@ -199,6 +200,7 @@ static int BrapiHandler (request_rec *req_p)
 
   				if (api_call_s)
   					{
+  						int success = 0;
   						apr_table_t *params_p = NULL;
 
   						/* jump to the rest api call string */
@@ -210,7 +212,15 @@ static int BrapiHandler (request_rec *req_p)
   						/*
   						 * Locations
   						 */
+  						success = IsLocationCall (req_p, api_call_s, params_p);
+  						if (success == 1)
+  							{
+  								res = OK;
+  							}
+  						else if (success == 0)
+  							{
 
+  							}
   					}
 
   			}		/* if (req_p -> method_number == M_GET) */
@@ -238,27 +248,34 @@ static const char *SetGrassrootsURL (cmd_parms *cmd_p, void *cfg_p, const char *
 }
 
 
-static void *MergeDirectoryConfig (apr_pool_t *pool_p, void *base_config_p, void *new_config_p)
+static void *MergeGrassrootsBrapiDirectoryConfig (apr_pool_t *pool_p, void *base_config_p, void *new_config_p)
+{
+	ModBrapiConfig *base_brapi_config_p = (ModBrapiConfig *) base_config_p;
+	ModBrapiConfig *new_brapi_config_p = (ModBrapiConfig *) new_config_p;
+
+	if (new_brapi_config_p -> mbc_grassroots_url_s)
+		{
+			base_brapi_config_p -> mbc_grassroots_url_s = new_brapi_config_p -> mbc_grassroots_url_s;
+		}
+
+	return base_config_p;
+}
+
+
+static void *MergeGrassrootsBrapiServerConfig (apr_pool_t *pool_p, void *base_config_p, void *vhost_config_p)
 {
 	/* currently ignore the vhosts config */
 	return base_config_p;
 }
 
 
-static void *MergeServerConfig (apr_pool_t *pool_p, void *base_config_p, void *vhost_config_p)
-{
-	/* currently ignore the vhosts config */
-	return base_config_p;
-}
-
-
-static void *CreateServerConfig (apr_pool_t *pool_p, server_rec *server_p)
+static void *CreateGrassrootsBrapiServerConfig (apr_pool_t *pool_p, server_rec *server_p)
 {
 	return ((void *) CreateConfig (pool_p, server_p));
 }
 
 
-static void *CreateDirectoryConfig (apr_pool_t *pool_p, char *context_s)
+static void *CreateGrassrootsBrapiDirectoryConfig (apr_pool_t *pool_p, char *context_s)
 {
 	return ((void *) CreateConfig (pool_p, NULL));
 }
@@ -276,4 +293,179 @@ static ModBrapiConfig *CreateConfig (apr_pool_t *pool_p, server_rec *server_p)
 	return config_p;
 }
 
+
+json_t *CreateResponseJSONForResult (json_t *payload_array_p, const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages)
+{
+	json_t *response_p = json_object ();
+
+	if (response_p)
+		{
+			json_t *metadata_p = CreateMetadataResponse (current_page, page_size, total_count, total_pages);
+
+			if (metadata_p)
+				{
+					if (json_object_set_new (response_p, "metadata", metadata_p) == 0)
+						{
+							json_t *result_p = json_object ();
+
+							if (json_object_set_new (response_p, "result", result_p) == 0)
+								{
+									if (json_object_set_new (response_p, "data", payload_array_p) == 0)
+										{
+											return response_p;
+										}		/* if (json_object_set (response_p, "data", payload_array_p) == 0) */
+									else
+										{
+											PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, response_p, "Failed to add data");
+											json_decref (result_p);
+										}
+
+								}		/* if (json_object_set (response_p, "result", result_p) == 0) */
+							else
+								{
+									PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, response_p, "Failed to add result");
+									json_decref (result_p);
+								}
+
+						}		/* if (json_object_set (response_p, "metadata", metadata_p) == 0) */
+					else
+						{
+							PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, response_p, "Failed to add metadata");
+							json_decref (metadata_p);
+						}
+
+				}		/* if (metadata_p) */
+			else
+				{
+					PrintErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, "CreateMetadataResponse failed");
+				}
+
+			json_decref (response_p);
+		}		/* if (response_p) */
+	else
+		{
+			PrintErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, "Failed to create response");
+		}
+
+	return NULL;
+}
+
+
+static json_t *CreateMetadataResponse (const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages)
+{
+	json_t *metadata_p = json_object ();
+
+	if (metadata_p)
+		{
+			json_t *pagination_p = json_object ();
+
+			if (pagination_p)
+				{
+					if (json_object_set_new (metadata_p, "pagination", pagination_p) == 0)
+						{
+							if (SetJSONInteger (pagination_p, "currentPage", current_page))
+								{
+									if (SetJSONInteger (pagination_p, "pageSize", page_size))
+										{
+											if (SetJSONInteger (pagination_p, "totalCount", total_count))
+												{
+													if (SetJSONInteger (pagination_p, "totalPages", total_pages))
+														{
+															json_t *datafiles_p = json_array ();
+
+															if (datafiles_p)
+																{
+																	if (json_object_set_new (metadata_p, "datafiles", datafiles_p) == 0)
+																		{
+																			json_t *status_p = json_array ();
+
+																			if (status_p)
+																				{
+																					if (json_object_set_new (metadata_p, "status", datafiles_p) == 0)
+																						{
+																							return metadata_p;
+																						}		/* if (json_object_set_new (metadata_p, "status", status_p) == 0) */
+																					else
+																						{
+																							PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, metadata_p, "Failed to add status");
+																							json_decref (status_p);
+																						}
+																				}		/* if (status_p) */
+																			else
+																				{
+																					PrintErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, "Failed to create status_p");
+																				}
+
+																		}		/* if (json_object_set_new (metadata_p, "datafiles", datafiles_p) == 0) */
+																	else
+																		{
+																			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, metadata_p, "Failed to add datafiles");
+																			json_decref (datafiles_p);
+																		}
+																}
+															else
+																{
+																	PrintErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, "Failed to create datafiles_p");
+																}
+
+														}		/* if (SetJSONInteger (pagination_p, "totalPages", total_pages)) */
+													else
+														{
+															PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, pagination_p, "Failed to set currentPage to " SIZET_FMT, total_pages);
+														}
+
+												}		/* if (SetJSONInteger (pagination_p, "totalCount", total_count)) */
+											else
+												{
+													PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, pagination_p, "Failed to set totalCount to " SIZET_FMT, total_count);
+												}
+
+										}		/* if (SetJSONInteger (pagination_p, "pageSize", page_size)) */
+									else
+										{
+											PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, pagination_p, "Failed to set pageSize to " SIZET_FMT, page_size);
+										}
+
+								}		/* if (SetJSONInteger (pagination_p, "currentPage", current_page)) */
+							else
+								{
+									PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, pagination_p, "Failed to set currentPage to " SIZET_FMT, current_page);
+								}
+
+						}		/* if (json_object_set (metadata_p, "pagination", pagination_p) == 0) */
+					else
+						{
+							PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, metadata_p, "Failed to add pagination");
+							json_decref (pagination_p);
+						}
+
+				}		/* if (pagination_p) */
+			else
+				{
+					PrintErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, "Failed to create pagination_p");
+				}
+
+			json_decref (metadata_p);
+		}		/* if (metadata_p) */
+	else
+		{
+			PrintErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, "Failed to create metadata");
+		}
+
+	return NULL;
+}
+
+
+char *GetObjectIdString (const json_t * const grassroots_json_p)
+{
+	char *id_s = NULL;
+	bson_oid_t oid;
+
+	if (GetMongoIdFromJSON (grassroots_json_p, &oid))
+		{
+			id_s = GetBSONOidAsString (&oid);
+		}
+
+	return id_s;
+}
 

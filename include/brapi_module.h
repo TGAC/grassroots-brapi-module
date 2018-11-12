@@ -60,4 +60,11 @@ typedef struct
  */
 json_t *GetGrassrootsRequest (ParameterSet *params_p);
 
+
+json_t *CreateResponseJSONForResult (json_t *payload_array_p, const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages);
+
+
+char *GetObjectIdString (const json_t * const grassroots_json_p);
+
+
 #endif /* SERVERS_BRAPI_MODULE_INCLUDE_BRAPI_MODULE_H_ */
