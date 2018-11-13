@@ -35,9 +35,6 @@
 #include "brapi_module.h"
 
 
-static int GetLocations (request_rec *req_p, apr_table_t *params_p);
-
-static int GetLocationsByDbId (request_rec *req_p, apr_table_t *params_p);
 
 static bool SetValidString (json_t *json_p, const char *key_s, const char *value_s);
 
@@ -63,153 +60,9 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 					InitSharedType (&value);
 					value.st_boolean_value = true;
 
-					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Locations", NULL, NULL, value, PL_ALL))
+					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Experimental Areas", NULL, NULL, value, PL_ALL))
 						{
-							json_t *grassroots_request_p = GetGrassrootsRequest (params_p);
-
-							if (grassroots_request_p)
-								{
-									ModBrapiConfig *config_p = ap_get_module_config (req_p -> per_dir_config, &grassroots_brapi_module);
-									Connection *connection_p = AllocateWebServerConnection (config_p -> mbc_grassroots_url_s);
-
-									if (connection_p)
-										{
-											json_t *grassroots_response_p = MakeRemoteJsonCall (grassroots_request_p, connection_p);
-
-											if (grassroots_response_p)
-												{
-													const json_t *service_results_p = json_object_get (grassroots_response_p, SERVICE_RESULTS_S);
-
-													if (service_results_p)
-														{
-															if (json_is_array (service_results_p))
-																{
-																	/*
-																	 * We should just have a single service
-																	 */
-																	if (json_array_size (service_results_p) == 1)
-																		{
-																			/* Get the job status */
-																			OperationStatus status = OS_ERROR;
-																			service_results_p = json_array_get (service_results_p, 0);
-
-																			const char *value_s = GetJSONString (service_results_p, SERVICE_STATUS_S);
-
-																			if (value_s)
-																				{
-																					status = GetOperationStatusFromString (value_s);
-																				}
-																			else
-																				{
-																					int i;
-																					/* Get the job status */
-
-																					if (GetJSONInteger(service_results_p, SERVICE_STATUS_VALUE_S, &i))
-																						{
-																							if ((i > OS_LOWER_LIMIT) && (i < OS_UPPER_LIMIT))
-																								{
-																									status = (OperationStatus) i;
-																								}
-																						}
-																				}
-
-																			if ((status == OS_PARTIALLY_SUCCEEDED) || (status == OS_SUCCEEDED))
-																				{
-																					const json_t *job_results_p = json_object_get (service_results_p, JOB_RESULTS_S);
-
-																					if (job_results_p)
-																						{
-																							json_t *brapi_results_p = json_array ();
-
-																							if (brapi_results_p)
-																								{
-																									json_t *response_p = NULL;
-																									size_t current_page = 1;
-																									size_t page_size;
-																									size_t total_count;
-																									size_t total_pages = 1;
-
-																									if (json_is_array (job_results_p))
-																										{
-																											const size_t num_results = json_array_size (job_results_p);
-																											size_t i = 0;
-
-																											for (i = 0; i < num_results; ++ i)
-																												{
-																													const json_t *grassroots_result_p = json_array_get (job_results_p, i);
-																													json_t *brapi_result_p = ConvertGrassrootsLocationToBrapi (grassroots_result_p);
-
-																													if (brapi_result_p)
-																														{
-																															if (json_array_append_new (brapi_results_p, brapi_result_p) == 0)
-																																{
-
-																																}		/* if (json_array_append_new (brapi_results_p, brapi_result_p) == 0) */
-																															else
-																																{
-																																	PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_result_p, "Failed to add result");
-																																	json_decref (brapi_result_p);
-																																}
-																														}
-																													else
-																														{
-																															PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, grassroots_result_p, "Failed to create brapi_result_p");
-																														}
-																												}
-
-																										}		/* if (json_is_array (job_results_p)) */
-
-																									total_count = json_array_size (brapi_results_p);
-																									page_size = json_array_size (brapi_results_p);
-
-																									response_p = CreateResponseJSONForResult (brapi_results_p, current_page, page_size, total_count, total_pages);
-
-																									if (response_p)
-																										{
-																											char *response_s = json_dumps (response_p, JSON_INDENT (2));
-
-																											if (response_s)
-																												{
-																													ap_rputs (response_s, req_p);
-																													ap_set_content_type (req_p, "application/json");
-
-																													res = 1;
-																													free (response_s);
-																												}		/* if (repsonse_s) */
-																											else
-																												{
-																													PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, response_p, "Failed tp get string representation");
-																												}
-
-
-																											json_decref (response_p);
-																										}		/* if (response_p) */
-																									else
-																										{
-																											PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, job_results_p, "CreateResponseJSONForResult failed");
-																										}
-
-																								}		/* if (brapi_results_p) */
-
-																						}		/* if (job_results_p) */
-
-																				}		/* if ((status == OS_PARTIALLY_SUCCEEDED) || (status == OS_SUCCEEDED)) */
-
-																		}		/* if (json_array_size (service_results_p) == 1) */
-
-																}		/* if (json_is_array (service_results_p)) */
-
-														}		/* if (results_p) */
-
-
-													json_decref (grassroots_response_p);
-												}		/* if (grassroots_response_p) */
-
-											FreeConnection (connection_p);
-										}		/* if (connection_p) */
-
-									json_decref (grassroots_request_p);
-								}		/* if (grassroots_request_p) */
+							res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
 
 						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
 
@@ -353,17 +206,4 @@ static bool SetValidString (json_t *json_p, const char *key_s, const char *value
 }
 
 
-static int GetLocations (request_rec *req_p, apr_table_t *params_p)
-{
-	int res = 0;
 
-	return res;
-}
-
-
-static int GetLocationsByDbId (request_rec *req_p, apr_table_t *params_p)
-{
-	int res = 0;
-
-	return res;
-}

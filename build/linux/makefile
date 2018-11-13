@@ -36,7 +36,7 @@ INSTALL_DIR  ?= $(APACHE_DIR)/modules
 INSTALLED    := $(INSTALL_DIR)/mod_$(MODNAME).so
 BUILD_DIR := build
 
-CFILES := brapi_module.c brapi_location.c
+CFILES := brapi_module.c brapi_location.c brapi_study.c
 
 VPATH := $(DIR_SRC)
 HFILES := $(CFILES:%.c=%.h)

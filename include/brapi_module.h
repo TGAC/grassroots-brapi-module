@@ -64,7 +64,15 @@ json_t *GetGrassrootsRequest (ParameterSet *params_p);
 json_t *CreateResponseJSONForResult (json_t *payload_array_p, const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages);
 
 
+int DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*convert_grassroots_to_brapi_fn) (const json_t *grassroots_result_p));
+
+
 char *GetObjectIdString (const json_t * const grassroots_json_p);
+
+
+const char *GetParameterValue (apr_table_t *params_p, const char * const param_s, apr_pool_t *pool_p);
+
+
 
 
 #endif /* SERVERS_BRAPI_MODULE_INCLUDE_BRAPI_MODULE_H_ */
