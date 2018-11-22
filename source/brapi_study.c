@@ -62,11 +62,11 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 							apr_pool_t *pool_p = req_p -> pool;
 							const char *value_s = GetParameterValue (req_params_p, "active", pool_p);
 
-							if (value_s && (strcmp (value_s, "true" == 0)))
+							if (value_s && (strcmp (value_s, "true") == 0))
 								{
 
 								}		/* if (value_s && (strcmp (value_s, "true" == 0))) */
-							else if ((value_s = GetParameterValue (req_params_p, "active", pool_p)) && (strcmp (value_s, "true" == 0)))
+							else if ((value_s = GetParameterValue (req_params_p, "active", pool_p)) && (strcmp (value_s, "true") == 0))
 								{
 
 								}
