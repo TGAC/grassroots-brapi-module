@@ -92,7 +92,7 @@ static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p
 
 	if (grassroots_data_p)
 		{
-			const json_t *src_address_p = json_object_get (grassroots_data_p, "address");
+			const json_t *src_address_p = GetCompoundJSONObject (grassroots_data_p, "address.address");
 
 			if (src_address_p)
 				{
