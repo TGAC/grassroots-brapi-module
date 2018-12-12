@@ -30,6 +30,7 @@
 #include "operation.h"
 #include "json_util.h"
 #include "string_utils.h"
+#include "time_util.h"
 
 #include "brapi_module.h"
 
@@ -37,6 +38,8 @@
 static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p);
 
 static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_response_p);
+
+static bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *dest_p, const char *dest_key_s);
 
 /*
 	commonCropName
@@ -113,7 +116,6 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Experimental Areas", NULL, NULL, value, PL_ALL))
 						{
-							struct tm *time_p = NULL;
 							apr_pool_t *pool_p = req_p -> pool;
 							const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
 							const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
@@ -359,7 +361,10 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 								{
 									if ((!active_s) || (SetJSONString (brapi_response_p, "active", active_s)))
 										{
-											success_flag = true;
+											if (CopyJSONStringValue (grassroots_data_p, "so:name", brapi_response_p, "studyName"))
+												{
+													success_flag = true;
+												}
 										}
 								}		/* if (SetJSONString (brapi_response_p, "startDate", start_time_s)) */
 
@@ -373,5 +378,29 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 
 		}		/* if (GetCurrentTime (&current_time)) */
 
+	return success_flag;
 }
+
+
+
+static bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *dest_p, const char *dest_key_s)
+{
+	bool success_flag = false;
+	const char *value_s = GetJSONString (src_p, src_key_s);
+
+	if (value_s)
+		{
+			if (SetJSONString (dest_p, dest_key_s, value_s))
+				{
+					success_flag = true;
+				}
+		}
+	else
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
 
