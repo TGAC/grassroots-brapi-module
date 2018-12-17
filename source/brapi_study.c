@@ -114,41 +114,46 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 					InitSharedType (&value);
 					value.st_boolean_value = true;
 
-					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Experimental Areas", NULL, NULL, value, PL_ALL))
+					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Search Experimental Areas", NULL, NULL, value, PL_ALL))
 						{
-							apr_pool_t *pool_p = req_p -> pool;
-							const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
-							const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
-
-							if (active_s && (strcmp (active_s, "true") == 0))
+							if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Experimental Areas", NULL, NULL, value, PL_ALL))
 								{
-									struct tm current_time;
+									apr_pool_t *pool_p = req_p -> pool;
+									const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
+									const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
 
-									success_flag = false;
-
-									if (GetCurrentTime (&current_time))
+									if (active_s && (strcmp (active_s, "true") == 0))
 										{
-											char *current_date_s = GetTimeAsString (&current_time, false);
+											struct tm current_time;
 
-											if (current_date_s)
+											success_flag = false;
+
+											if (GetCurrentTime (&current_time))
 												{
-													if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_TIME, "Active on date", NULL, NULL, value, PL_ALL))
-														{
-															success_flag = true;
-														}
+													char *current_date_s = GetTimeAsString (&current_time, false);
 
-													FreeCopiedString (current_date_s);
+													if (current_date_s)
+														{
+															if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_TIME, "Active on date", NULL, NULL, value, PL_ALL))
+																{
+																	success_flag = true;
+																}
+
+															FreeCopiedString (current_date_s);
+														}
 												}
+
+										}		/* if (active_s && (strcmp (active_s, "true" == 0))) */
+
+									if (success_flag)
+										{
+											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsStudyToBrapi);
 										}
 
-								}		/* if (active_s && (strcmp (active_s, "true" == 0))) */
+								}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
 
-							if (success_flag)
-								{
-									res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsStudyToBrapi);
-								}
+						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Search Experimental Areas", NULL, NULL, value, PL_ALL)) */
 
-						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
 
 					FreeParameterSet (params_p);
 				}		/* if (params_p) */
@@ -307,7 +312,7 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 				{
 					if (SetStudyActivity (grassroots_data_p, brapi_study_p))
 						{
-
+							return brapi_study_p;
 						}		/* if (SetStudyActivity (grassroots_data_p, brapi_study_p)) */
 
 					json_decref (brapi_study_p);
@@ -359,13 +364,19 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 
 							if (SetJSONString (brapi_response_p, "startDate", start_time_s))
 								{
-									if ((!active_s) || (SetJSONString (brapi_response_p, "active", active_s)))
+									if ((!end_time_s) || (SetJSONString (brapi_response_p, "endDate", end_time_s)))
 										{
-											if (CopyJSONStringValue (grassroots_data_p, "so:name", brapi_response_p, "studyName"))
+											if ((!active_s) || (SetJSONString (brapi_response_p, "active", active_s)))
 												{
-													success_flag = true;
+													if (CopyJSONStringValue (grassroots_data_p, "so:name", brapi_response_p, "studyName"))
+														{
+
+																	success_flag = true;
+														}
 												}
-										}
+
+										}		/* if ((!end_time_s) || (SetJSONString (brapi_response_p, "startDate", end_time_s))) */
+
 								}		/* if (SetJSONString (brapi_response_p, "startDate", start_time_s)) */
 
 						}
@@ -381,6 +392,14 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 	return success_flag;
 }
 
+
+static bool AddDataLinks (const json_t *grassroots_data_p, json_t *brapi_response_p)
+{
+	bool success_flag = false;
+
+
+	return success_flag;
+}
 
 
 static bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *dest_p, const char *dest_key_s)
