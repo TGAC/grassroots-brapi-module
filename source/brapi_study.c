@@ -370,8 +370,7 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 												{
 													if (CopyJSONStringValue (grassroots_data_p, "so:name", brapi_response_p, "studyName"))
 														{
-
-																	success_flag = true;
+															success_flag = true;
 														}
 												}
 

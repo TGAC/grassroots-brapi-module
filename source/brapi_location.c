@@ -60,10 +60,9 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 					InitSharedType (&value);
 					value.st_boolean_value = true;
 
-					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Experimental Areas", NULL, NULL, value, PL_ALL))
+					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Locations", NULL, NULL, value, PL_ALL))
 						{
 							res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
-
 						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
 
 					FreeParameterSet (params_p);
@@ -92,7 +91,7 @@ static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p
 
 	if (grassroots_data_p)
 		{
-			const json_t *src_address_p = GetCompoundJSONObject (grassroots_data_p, "address.address");
+			const json_t *src_address_p = json_object_get (grassroots_data_p, "address");
 
 			if (src_address_p)
 				{

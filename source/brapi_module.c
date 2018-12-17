@@ -487,7 +487,7 @@ json_t *CreateResponseJSONForResult (json_t *payload_array_p, const size_t curre
 
 							if (json_object_set_new (response_p, "result", result_p) == 0)
 								{
-									if (json_object_set_new (response_p, "data", payload_array_p) == 0)
+									if (json_object_set_new (result_p, "data", payload_array_p) == 0)
 										{
 											return response_p;
 										}		/* if (json_object_set (response_p, "data", payload_array_p) == 0) */

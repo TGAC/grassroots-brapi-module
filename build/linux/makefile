@@ -120,6 +120,7 @@ shared: $(SHARED)
 
 $(SHARED): init $(OBJFILES)
 	@echo "LIB_PATHS: $(LIB_PATHS)"
+	@echo "OBJFILES: $(OBJFILES)"
 	$(LD) -o $(SHARED) $(OBJFILES) $(STATIC_LIBS) $(LDFLAGS)
 
 clean:
