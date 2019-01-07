@@ -114,9 +114,9 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 					InitSharedType (&value);
 					value.st_boolean_value = true;
 
-					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Search Experimental Areas", NULL, NULL, value, PL_ALL))
+					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Search Studies", NULL, NULL, value, PL_ALL))
 						{
-							if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Experimental Areas", NULL, NULL, value, PL_ALL))
+							if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Studies", NULL, NULL, value, PL_ALL))
 								{
 									apr_pool_t *pool_p = req_p -> pool;
 									const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
