@@ -125,17 +125,13 @@ static json_t *ConvertGrassrootsTrialToBrapi (const json_t *grassroots_json_p)
 
 	if (grassroots_data_p)
 		{
-			json_t *brapi_study_p = json_object ();
+			json_t *brapi_trial_p = json_object ();
 
-			if (brapi_study_p)
+			if (brapi_trial_p)
 				{
-					if (SetStudyActivity (grassroots_data_p, brapi_study_p))
-						{
-							return brapi_study_p;
-						}		/* if (SetStudyActivity (grassroots_data_p, brapi_study_p)) */
 
-					json_decref (brapi_study_p);
-				}		/* if (brapi_study_p) */
+					return brapi_trial_p;
+				}		/* if (brapi_trial_p) */
 
 		}		/* if (grassroots_data_p) */
 
