@@ -20,9 +20,11 @@
  *      Author: billy
  */
 
+#include "httpd.h"
+#include "util_script.h"
+#include "apr_escape.h"
 
 #include "brapi_module.h"
-#include "util_script.h"
 #include "mongodb_tool.h"
 
 #include "brapi_location.h"
