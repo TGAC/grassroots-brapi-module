@@ -19,7 +19,7 @@ CC	:= gcc
 OUTPUT_DIR	 := out
 SHARED       := $(OUTPUT_DIR)/$(SHARED_FNAME)
 
-APXS := $(APACHE_DIR)/bin/apxs
+APXS := $(DIR_APACHE)/bin/apxs
 
 APACHE_INCLUDES_DIR := $(APACHE_DIR)/include
 
