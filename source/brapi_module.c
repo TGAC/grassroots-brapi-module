@@ -135,7 +135,7 @@ json_t *GetGrassrootsRequest (ParameterSet *params_p)
 								{
 									if (json_array_append_new (services_array_p, service_p) == 0)
 										{
-											if (SetJSONString (service_p, SERVICE_NAME_S, "DFWFieldTrial search service"))
+											if (SetJSONString (service_p, SERVICE_NAME_S, "Search Field Trials"))
 												{
 													if (SetJSONBoolean (service_p, SERVICE_RUN_S, true))
 														{

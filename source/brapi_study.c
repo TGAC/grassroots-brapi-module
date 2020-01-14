@@ -108,7 +108,6 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 			if (params_p)
 				{
-					bool success_flag = true;
 					SharedType value;
 
 					InitSharedType (&value);
@@ -116,44 +115,43 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Search Studies", NULL, NULL, value, PL_ALL))
 						{
-							if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Studies", NULL, NULL, value, PL_ALL))
+							bool success_flag = false;
+							apr_pool_t *pool_p = req_p -> pool;
+							const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
+							const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
+
+							if (active_s && (strcmp (active_s, "true") == 0))
 								{
-									apr_pool_t *pool_p = req_p -> pool;
-									const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
-									const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
+									struct tm current_time;
 
-									if (active_s && (strcmp (active_s, "true") == 0))
+									if (GetCurrentTime (&current_time))
 										{
-											struct tm current_time;
+											char *current_date_s = GetTimeAsString (&current_time, false);
 
-											success_flag = false;
-
-											if (GetCurrentTime (&current_time))
+											if (current_date_s)
 												{
-													char *current_date_s = GetTimeAsString (&current_time, false);
-
-													if (current_date_s)
+													if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_TIME, "Active on date", NULL, NULL, value, PL_ALL))
 														{
-															if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_TIME, "Active on date", NULL, NULL, value, PL_ALL))
-																{
-																	success_flag = true;
-																}
-
-															FreeCopiedString (current_date_s);
+															success_flag = true;
 														}
+
+													FreeCopiedString (current_date_s);
 												}
-
-										}		/* if (active_s && (strcmp (active_s, "true" == 0))) */
-
-									if (success_flag)
-										{
-											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsStudyToBrapi);
 										}
 
-								}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
+								}		/* if (active_s && (strcmp (active_s, "true" == 0))) */
+							else
+								{
+									success_flag = true;
+								}
 
-						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Search Experimental Areas", NULL, NULL, value, PL_ALL)) */
+							if (success_flag)
+								{
+									params_p -> ps_current_level = PL_ADVANCED;
+									res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsStudyToBrapi);
+								}
 
+						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
 
 					FreeParameterSet (params_p);
 				}		/* if (params_p) */
