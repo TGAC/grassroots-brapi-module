@@ -20,6 +20,9 @@
  *      Author: billy
  */
 
+#include "bson.h"
+#include "mongodb_tool.h"
+
 #include "brapi_study.h"
 
 #include "schema_keys.h"
@@ -33,13 +36,22 @@
 #include "time_util.h"
 
 #include "brapi_module.h"
+#include "brapi_location.h"
 
+#include "study.h"
+#include "streams.h"
 
 static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p);
 
 static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_response_p);
 
 static bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *dest_p, const char *dest_key_s);
+
+static bool SetStudyLocationData (const json_t *grassroots_data_p, json_t *brapi_response_p);
+
+static bool SetStudyCurrentCrop (const json_t *grassroots_data_p, json_t *brapi_response_p);
+
+static bool AddAdditionalInfo (const json_t *grassroots_data_p, json_t *brapi_response_p);
 
 /*
 	commonCropName
@@ -304,17 +316,42 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 
 	if (grassroots_data_p)
 		{
-			json_t *brapi_study_p = json_object ();
+			json_t *brapi_response_p = json_object ();
 
-			if (brapi_study_p)
+			if (brapi_response_p)
 				{
-					if (SetStudyActivity (grassroots_data_p, brapi_study_p))
+					if (CopyJSONStringValue (grassroots_data_p, "so:name", brapi_response_p, "studyName"))
 						{
-							return brapi_study_p;
-						}		/* if (SetStudyActivity (grassroots_data_p, brapi_study_p)) */
+							bson_oid_t id;
 
-					json_decref (brapi_study_p);
-				}		/* if (brapi_study_p) */
+							if (GetMongoIdFromJSON (grassroots_data_p, &id))
+								{
+									char *id_s = GetBSONOidAsString (&id);
+
+									if (id_s)
+										{
+											if (SetJSONString (brapi_response_p, "studyDbId", id_s))
+												{
+													if (SetStudyLocationData (grassroots_data_p, brapi_response_p))
+														{
+															if (SetStudyCurrentCrop (grassroots_data_p, brapi_response_p))
+																{
+																	SetStudyActivity (grassroots_data_p, brapi_response_p);
+
+																	AddAdditionalInfo (grassroots_data_p, brapi_response_p);
+
+																	return brapi_response_p;
+																}
+														}
+												}
+
+											FreeCopiedString (id_s);
+										}
+								}
+						}
+
+					json_decref (brapi_response_p);
+				}		/* if (brapi_response_p) */
 
 		}		/* if (grassroots_data_p) */
 
@@ -329,7 +366,8 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 
 	if (GetCurrentTime (&current_time))
 		{
-			const char *start_time_s = GetJSONString (grassroots_data_p, "sowing_date");
+			const char *start_time_s = GetJSONString (grassroots_data_p, ST_SOWING_DATE_S);
+			const char *end_time_s = GetJSONString (grassroots_data_p, ST_HARVEST_DATE_S);
 
 			if (start_time_s)
 				{
@@ -339,9 +377,6 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 						{
 							const char *active_s = NULL;
 							struct tm *end_time_p = NULL;
-							const char *end_time_s;
-
-							end_time_s = GetJSONString (grassroots_data_p, "harvest_date");
 
 							if (end_time_s)
 								{
@@ -366,10 +401,7 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 										{
 											if ((!active_s) || (SetJSONString (brapi_response_p, "active", active_s)))
 												{
-													if (CopyJSONStringValue (grassroots_data_p, "so:name", brapi_response_p, "studyName"))
-														{
-															success_flag = true;
-														}
+
 												}
 
 										}		/* if ((!end_time_s) || (SetJSONString (brapi_response_p, "startDate", end_time_s))) */
@@ -382,12 +414,122 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 							PrintErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, "Failed to convert \"%s\" to a time", start_time_s);
 						}
 
-				}		/* if (time_s) */
+				}		/* if (start_time_s) */
 
 		}		/* if (GetCurrentTime (&current_time)) */
 
 	return success_flag;
 }
+
+
+static bool SetStudyLocationData (const json_t *grassroots_data_p, json_t *brapi_response_p)
+{
+	bool success_flag = false;
+	char *location_s = NULL;
+	char *id_s = NULL;
+
+	if (GetMinimalLocationData (grassroots_data_p, &location_s, &id_s))
+		{
+			if ((!id_s) || (SetJSONString (brapi_response_p, "locationName", location_s)))
+				{
+					if ((!location_s) || (SetJSONString (brapi_response_p, "locationDbId", id_s)))
+						{
+							success_flag = true;
+						}
+				}
+
+			if (id_s)
+				{
+					FreeCopiedString (id_s);
+				}
+
+			if (location_s)
+				{
+					FreeCopiedString (location_s);
+				}
+
+		}
+
+
+	return success_flag;
+}
+
+
+static bool SetStudyCurrentCrop (const json_t *grassroots_data_p, json_t *brapi_response_p)
+{
+	bool success_flag = false;
+	const json_t *crop_p = json_object_get (grassroots_data_p, ST_CURRENT_CROP_S);
+
+	if (crop_p)
+		{
+			if (CopyJSONStringValue (crop_p, CR_NAME_S, brapi_response_p, "commonCropName"))
+				{
+					success_flag = true;
+				}
+		}
+	else
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddAdditionalInfo (const json_t *grassroots_data_p, json_t *brapi_response_p)
+{
+	bool success_flag = false;
+	json_t *additional_info_p = json_object ();
+
+	if (additional_info_p)
+		{
+
+			if (!CopyJSONStringValue (grassroots_data_p, ST_DESIGN_S, additional_info_p, ST_DESIGN_S))
+				{
+					PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, grassroots_data_p, "Failed to add design to additional info");
+
+				}		/* if (!CopyJSONStringValue (grassroots_data_p, ST_DESIGN_S, additional_info_p, ST_DESIGN_S)) */
+
+			if (!CopyJSONStringValue (grassroots_data_p, ST_DESCRIPTION_S, additional_info_p, ST_DESCRIPTION_S))
+				{
+					PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, grassroots_data_p, "Failed to add description to additional info");
+				}		/* if (!CopyJSONStringValue (grassroots_data_p, ST_DESCRIPTION_S, additional_info_p, ST_DESCRIPTION_S)) */
+
+			if (!CopyJSONStringValue (grassroots_data_p, ST_GROWING_CONDITIONS_S, additional_info_p, ST_GROWING_CONDITIONS_S))
+				{
+					PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, grassroots_data_p, "Failed to add growing conditiuns to additional info");
+				}		/* if (!CopyJSONStringValue (grassroots_data_p, ST_GROWING_CONDITIONS_S, additional_info_p, ST_GROWING_CONDITIONS_S)) */
+
+			if (!CopyJSONStringValue (grassroots_data_p, ST_PHENOTYPE_GATHERING_NOTES_S, additional_info_p, ST_PHENOTYPE_GATHERING_NOTES_S))
+				{
+					PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, grassroots_data_p, "Failed to add phenotype gathering notes to additional info");
+				}		/* if (!CopyJSONStringValue (grassroots_data_p, ST_PHENOTYPE_GATHERING_NOTES_S, additional_info_p, ST_PHENOTYPE_GATHERING_NOTES_S)) */
+
+
+			if (json_object_size (additional_info_p) > 0)
+				{
+					if (json_object_set_new (brapi_response_p, "additionalInfo", additional_info_p) == 0)
+						{
+							success_flag = true;
+						}
+					else
+						{
+							json_decref (additional_info_p);
+						}
+				}
+			else
+				{
+					json_decref (additional_info_p);
+					success_flag = true;
+				}
+
+		}		/* if (additional_info_p) */
+
+
+	return success_flag;
+
+}
+
 
 
 static bool AddDataLinks (const json_t *grassroots_data_p, json_t *brapi_response_p)

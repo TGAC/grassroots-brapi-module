@@ -23,10 +23,17 @@
 #ifndef SERVERS_BRAPI_MODULE_INCLUDE_BRAPI_LOCATION_H_
 #define SERVERS_BRAPI_MODULE_INCLUDE_BRAPI_LOCATION_H_
 
+
 #include "httpd.h"
 #include "util_script.h"
 
+#include "jansson.h"
+
+#include "typedefs.h"
 
 int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+
+bool GetMinimalLocationData (const json_t *grassroots_json_p, char **name_ss, char **db_id_ss);
+
 
 #endif /* SERVERS_BRAPI_MODULE_INCLUDE_BRAPI_LOCATION_H_ */

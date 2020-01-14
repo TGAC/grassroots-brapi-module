@@ -39,6 +39,17 @@
 
 
 /*
+ * Ensure field trial named constants are defined
+ */
+#define	ALLOCATE_STUDY_TAGS (1)
+#define	ALLOCATE_CROP_TAGS (1)
+
+#include "study.h"
+#include "crop.h"
+
+
+
+/*
  * STATIC FUNCTION DECLARATIONS
  */
 
@@ -360,7 +371,7 @@ int DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*con
 
 																			if (response_p)
 																				{
-																					char *response_s = json_dumps (response_p, JSON_INDENT (2));
+																					char *response_s = json_dumps (response_p, JSON_INDENT (2) | JSON_ESCAPE_SLASH);
 
 																					if (response_s)
 																						{

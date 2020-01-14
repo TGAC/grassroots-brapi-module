@@ -20,6 +20,8 @@
  *      Author: billy
  */
 
+#include "bson.h"
+
 #include "brapi_location.h"
 
 #include "address.h"
@@ -31,9 +33,10 @@
 #include "operation.h"
 #include "json_util.h"
 #include "string_utils.h"
-
+#include "mongodb_tool.h"
 #include "brapi_module.h"
 
+#include "study.h"
 
 
 static bool SetValidString (json_t *json_p, const char *key_s, const char *value_s);
@@ -85,13 +88,53 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 }
 
 
+bool GetMinimalLocationData (const json_t *grassroots_json_p, char **name_ss, char **db_id_ss)
+{
+	const json_t *address_p = json_object_get (grassroots_json_p, ST_LOCATION_S);
+
+	if (address_p)
+		{
+			bson_oid_t id;
+
+			if (GetMongoIdFromJSON (address_p, &id))
+				{
+					const char *name_s = GetJSONString (address_p, "name");
+
+					if (name_s)
+						{
+							char *id_s = GetBSONOidAsString (&id);
+
+							if (id_s)
+								{
+									char *copied_name_s = EasyCopyToNewString (name_s);
+
+									if (copied_name_s)
+										{
+											*name_ss = copied_name_s;
+											*db_id_ss = id_s;
+
+											return true;
+										}
+
+									FreeCopiedString (id_s);
+								}
+						}
+				}
+		}
+
+	return false;
+}
+
+
+
+
 static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p)
 {
 	const json_t *grassroots_data_p = json_object_get (grassroots_json_p, RESOURCE_DATA_S);
 
 	if (grassroots_data_p)
 		{
-			const json_t *src_address_p = json_object_get (grassroots_data_p, "address");
+			const json_t *src_address_p = json_object_get (grassroots_data_p, ST_LOCATION_S);
 
 			if (src_address_p)
 				{
