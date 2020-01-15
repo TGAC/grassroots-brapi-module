@@ -53,6 +53,8 @@ static bool SetStudyCurrentCrop (const json_t *grassroots_data_p, json_t *brapi_
 
 static bool AddAdditionalInfo (const json_t *grassroots_data_p, json_t *brapi_response_p);
 
+static bool AddParentTrialData (const json_t *grassroots_data_p, json_t *brapi_response_p);
+
 /*
 	commonCropName
 	Common name for the crop associated with this study
@@ -340,6 +342,8 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 
 																	AddAdditionalInfo (grassroots_data_p, brapi_response_p);
 
+																	AddParentTrialData (grassroots_data_p, brapi_response_p);
+
 																	return brapi_response_p;
 																}
 														}
@@ -471,6 +475,40 @@ static bool SetStudyCurrentCrop (const json_t *grassroots_data_p, json_t *brapi_
 		{
 			success_flag = true;
 		}
+
+	return success_flag;
+}
+
+
+static bool AddParentTrialData (const json_t *grassroots_data_p, json_t *brapi_response_p)
+{
+	bool success_flag = false;
+	const json_t *field_trial_p = json_object_get (grassroots_data_p, ST_PARENT_FIELD_TRIAL_S);
+
+	if (field_trial_p)
+		{
+			if (CopyJSONStringValue (field_trial_p, FT_NAME_S, brapi_response_p, "trialName"))
+				{
+					bson_oid_t id;
+
+					if (GetMongoIdFromJSON (field_trial_p, &id))
+						{
+							char *id_s = GetBSONOidAsString (&id);
+
+							if (id_s)
+								{
+									if (SetJSONString (brapi_response_p, "trialDbId", id_s))
+										{
+											success_flag = true;
+										}
+
+									FreeCopiedString (id_s);
+								}
+						}
+				}
+
+		}		/* if (field_trial_p) */
+
 
 	return success_flag;
 }
