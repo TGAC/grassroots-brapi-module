@@ -501,14 +501,33 @@ static bool AddParentTrialData (const json_t *grassroots_data_p, json_t *brapi_r
 										{
 											success_flag = true;
 										}
+									else
+										{
+											PrintJSONToErrors (STM_LEVEL_WARNING, __FILE__, __LINE__, brapi_response_p, "Failed set trialDbId to \"%s\"", id_s);
+										}
 
 									FreeCopiedString (id_s);
 								}
+							else
+								{
+									PrintJSONToErrors (STM_LEVEL_WARNING, __FILE__, __LINE__, field_trial_p, "Failed to copy MongoDB ID to string");
+								}
 						}
+					else
+						{
+							PrintJSONToErrors (STM_LEVEL_WARNING, __FILE__, __LINE__, field_trial_p, "Failed to get MongoDB ID");
+						}
+				}
+			else
+				{
+					PrintJSONToErrors (STM_LEVEL_WARNING, __FILE__, __LINE__, field_trial_p, "Failed to copy field trial name \"%s\"", FT_NAME_S);
 				}
 
 		}		/* if (field_trial_p) */
-
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_WARNING, __FILE__, __LINE__, grassroots_data_p, "No parent field trial \"%s\"", ST_PARENT_FIELD_TRIAL_S);
+		}
 
 	return success_flag;
 }
