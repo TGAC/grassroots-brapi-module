@@ -65,6 +65,7 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 
 					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Locations", NULL, NULL, value, PL_ALL))
 						{
+							params_p -> ps_current_level = PL_ADVANCED;
 							res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
 						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
 
@@ -79,8 +80,36 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 
 			if (strncmp (api_call_s, signature_s, l) == 0)
 				{
-					res = -1;
+					const char *location_id_s = api_call_s + l;
 
+					if (strlen (location_id_s) > 0)
+						{
+							ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
+
+							res = -1;
+
+							if (params_p)
+								{
+									SharedType value;
+
+									InitSharedType (&value);
+									value.st_string_value_s = (char *) location_id_s;
+
+									if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_STRING, "Location ID", NULL, NULL, value, PL_ALL))
+										{
+											params_p -> ps_current_level = PL_ADVANCED;
+											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
+										}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
+
+									FreeParameterSet (params_p);
+								}		/* if (params_p) */
+
+
+						}
+					else
+						{
+							res = -1;
+						}
 				}
 		}
 
@@ -127,6 +156,36 @@ bool GetMinimalLocationData (const json_t *grassroots_json_p, char **name_ss, ch
 
 
 
+/*
+
+
+Implemented by: Germinate
+
+Get a list of locations.
+
+    The countryCode is as per ISO_3166-1_alpha-3 spec.
+
+    altitude is in meters.
+
+Note: Consider revising to describe polygon lat/lan points and check if adopting http://geojson.org/ is worth doing for v1.
+
+Response Fields
+Field 	Type 	Description
+data 	array[object]
+abbreviation 	string 	An abbreviation which represents this location
+additionalInfo 	object 	Additional arbitrary info
+altitude 	number 	The altitude of this location
+countryCode 	string 	ISO_3166-1_alpha-3 spec
+countryName 	string 	The full name of the country where this location is
+documentationURL 	string (uri) 	A URL to the human readable documentation of this object
+instituteAddress 	string 	The street address of the institute representing this location
+instituteName 	string 	each institute/laboratory can have several experimental field
+latitude 	number 	The latitude of this location
+locationDbId 	string 	string identifier
+locationName 	string 	A human readable name for this location
+locationType 	string 	The type of location this represents (ex. Breeding Location, Storage Location, etc)
+longitude 	number 	the longitude of this location
+ */
 
 static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p)
 {

@@ -41,13 +41,15 @@
 /*
  * Ensure field trial named constants are defined
  */
-#define	ALLOCATE_STUDY_TAGS (1)
 #define	ALLOCATE_CROP_TAGS (1)
 #define ALLOCATE_FIELD_TRIAL_TAGS (1)
+#define	ALLOCATE_STUDY_TAGS (1)
+#define ALLOCATE_STUDY_JOB_CONSTANTS (1)
 
-#include "study.h"
 #include "crop.h"
 #include "field_trial.h"
+#include "study.h"
+#include "study_jobs.h"
 
 
 
