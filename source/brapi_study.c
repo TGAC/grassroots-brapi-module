@@ -46,10 +46,6 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p);
 
 static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_response_p);
 
-static bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *dest_p, const char *dest_key_s);
-
-static bool SetStudyLocationData (const json_t *grassroots_data_p, json_t *brapi_response_p);
-
 static bool SetStudyCurrentCrop (const json_t *grassroots_data_p, json_t *brapi_response_p);
 
 static bool AddAdditionalInfo (const json_t *grassroots_data_p, json_t *brapi_response_p);
@@ -335,14 +331,17 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 {
+	json_t *brapi_response_p = NULL;
 	const json_t *grassroots_data_p = json_object_get (grassroots_json_p, RESOURCE_DATA_S);
 
 	if (grassroots_data_p)
 		{
-			json_t *brapi_response_p = json_object ();
+			brapi_response_p = json_object ();
 
 			if (brapi_response_p)
 				{
+					bool success_flag = false;
+
 					if (CopyJSONStringValue (grassroots_data_p, "so:name", brapi_response_p, "studyName"))
 						{
 							bson_oid_t id;
@@ -365,7 +364,7 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 
 																	AddParentTrialData (grassroots_data_p, brapi_response_p);
 
-																	return brapi_response_p;
+																	success_flag = true;
 																}
 														}
 												}
@@ -375,12 +374,16 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 								}
 						}
 
-					json_decref (brapi_response_p);
+					if (!success_flag)
+						{
+							json_decref (brapi_response_p);
+							brapi_response_p = NULL;
+						}
 				}		/* if (brapi_response_p) */
 
 		}		/* if (grassroots_data_p) */
 
-	return NULL;
+	return brapi_response_p;
 }
 
 
@@ -447,7 +450,7 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 }
 
 
-static bool SetStudyLocationData (const json_t *grassroots_data_p, json_t *brapi_response_p)
+bool SetStudyLocationData (const json_t *grassroots_data_p, json_t *brapi_response_p)
 {
 	bool success_flag = false;
 	char *location_s = NULL;
@@ -617,26 +620,3 @@ static bool AddDataLinks (const json_t *grassroots_data_p, json_t *brapi_respons
 
 	return success_flag;
 }
-
-
-static bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *dest_p, const char *dest_key_s)
-{
-	bool success_flag = false;
-	const char *value_s = GetJSONString (src_p, src_key_s);
-
-	if (value_s)
-		{
-			if (SetJSONString (dest_p, dest_key_s, value_s))
-				{
-					success_flag = true;
-				}
-		}
-	else
-		{
-			success_flag = true;
-		}
-
-	return success_flag;
-}
-
-

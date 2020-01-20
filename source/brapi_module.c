@@ -29,6 +29,7 @@
 
 #include "brapi_location.h"
 #include "brapi_study.h"
+#include "brapi_trial.h"
 
 #include "parameter_set.h"
 #include "connection.h"
@@ -42,12 +43,14 @@
  * Ensure field trial named constants are defined
  */
 #define	ALLOCATE_CROP_TAGS (1)
-#define ALLOCATE_FIELD_TRIAL_TAGS (1)
+#define	ALLOCATE_FIELD_TRIAL_TAGS (1)
+#define ALLOCATE_FIELD_TRIAL_CONSTANTS (1)
 #define	ALLOCATE_STUDY_TAGS (1)
 #define ALLOCATE_STUDY_JOB_CONSTANTS (1)
 
 #include "crop.h"
 #include "field_trial.h"
+#include "field_trial_jobs.h"
 #include "study.h"
 #include "study_jobs.h"
 
@@ -257,7 +260,19 @@ static int BrapiHandler (request_rec *req_p)
 										}
 									else if (success == 0)
 										{
+											/*
+											 * Trials
+											 */
+											success = IsTrialCall (req_p, api_call_s, params_p);
 
+											if (success == 1)
+												{
+													res = OK;
+												}
+											else if (success == 0)
+												{
+
+												}
 										}
 
 								}
@@ -375,7 +390,8 @@ int DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*con
 
 																			if (response_p)
 																				{
-																					char *response_s = json_dumps (response_p, JSON_INDENT (2) | JSON_ESCAPE_SLASH);
+																					const size_t REAL_PRECISION = 8;
+																					char *response_s = json_dumps (response_p, JSON_INDENT (2) | JSON_ESCAPE_SLASH | JSON_REAL_PRECISION (REAL_PRECISION));
 
 																					if (response_s)
 																						{
@@ -543,6 +559,30 @@ json_t *CreateResponseJSONForResult (json_t *payload_array_p, const size_t curre
 
 	return NULL;
 }
+
+
+bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *dest_p, const char *dest_key_s)
+{
+	bool success_flag = false;
+	const char *value_s = GetJSONString (src_p, src_key_s);
+
+	if (value_s)
+		{
+			if (SetJSONString (dest_p, dest_key_s, value_s))
+				{
+					success_flag = true;
+				}
+		}
+	else
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+
 
 
 static json_t *CreateMetadataResponse (const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages)

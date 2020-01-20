@@ -72,6 +72,7 @@ char *GetObjectIdString (const json_t * const grassroots_json_p);
 
 const char *GetParameterValue (apr_table_t *params_p, const char * const param_s, apr_pool_t *pool_p);
 
+bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *dest_p, const char *dest_key_s);
 
 
 
