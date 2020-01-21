@@ -75,6 +75,7 @@ int IsTrialCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 							if (success_flag)
 								{
+									params_p -> ps_current_level = PL_ADVANCED;
 									res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsTrialToBrapi);
 								}
 
@@ -93,7 +94,36 @@ int IsTrialCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 			if (strncmp (api_call_s, signature_s, l) == 0)
 				{
-					res = -1;
+					const char *trial_id_s = api_call_s + l;
+
+					if (strlen (trial_id_s) > 0)
+						{
+							ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
+
+							res = -1;
+
+							if (params_p)
+								{
+									SharedType value;
+
+									InitSharedType (&value);
+									value.st_string_value_s = (char *) trial_id_s;
+
+									if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, FIELD_TRIAL_ID.npt_type, FIELD_TRIAL_ID.npt_name_s, NULL, NULL, value, PL_ALL))
+										{
+											params_p -> ps_current_level = PL_ADVANCED;
+											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsTrialToBrapi);
+										}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
+
+									FreeParameterSet (params_p);
+								}		/* if (params_p) */
+
+
+						}
+					else
+						{
+							res = -1;
+						}
 				}
 		}
 
@@ -246,7 +276,7 @@ static bool SetTrialStudiesData (const json_t *grassroots_data_p, json_t *brapi_
 
 					if (num_studies == json_array_size (brapi_studies_p))
 						{
-							if (json_object_set_new (brapi_response_p, "studies", brapi_studies_p))
+							if (json_object_set_new (brapi_response_p, "studies", brapi_studies_p) == 0)
 								{
 									success_flag = true;
 								}
@@ -285,11 +315,14 @@ static bool ConvertGrassrootsStudy (const json_t *grassroots_study_p, json_t *br
 
 							if (id_s)
 								{
-									if (SetStudyLocationData (grassroots_study_p, brapi_study_p))
+									if (SetJSONString (brapi_study_p, "studyDbId", id_s))
 										{
-											if (json_array_append_new (brapi_studies_p, brapi_study_p) == 0)
+											if (SetStudyLocationData (grassroots_study_p, brapi_study_p))
 												{
-													success_flag = true;
+													if (json_array_append_new (brapi_studies_p, brapi_study_p) == 0)
+														{
+															success_flag = true;
+														}
 												}
 										}
 

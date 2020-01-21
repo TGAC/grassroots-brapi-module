@@ -47,13 +47,15 @@
 #define ALLOCATE_FIELD_TRIAL_CONSTANTS (1)
 #define	ALLOCATE_STUDY_TAGS (1)
 #define ALLOCATE_STUDY_JOB_CONSTANTS (1)
+#define ALLOCATE_LOCATION_JOB_CONSTANTS (1)
 
 #include "crop.h"
 #include "field_trial.h"
 #include "field_trial_jobs.h"
 #include "study.h"
 #include "study_jobs.h"
-
+#include "location.h"
+#include "location_jobs.h"
 
 
 /*

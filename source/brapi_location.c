@@ -37,6 +37,8 @@
 #include "brapi_module.h"
 
 #include "study.h"
+#include "location_jobs.h"
+
 
 
 static bool SetValidString (json_t *json_p, const char *key_s, const char *value_s);
@@ -95,7 +97,7 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 									InitSharedType (&value);
 									value.st_string_value_s = (char *) location_id_s;
 
-									if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_STRING, "Location ID", NULL, NULL, value, PL_ALL))
+									if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, LOCATION_ID.npt_type, LOCATION_ID.npt_name_s, NULL, NULL, value, PL_ALL))
 										{
 											params_p -> ps_current_level = PL_ADVANCED;
 											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
