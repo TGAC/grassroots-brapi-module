@@ -58,6 +58,9 @@
 #include "location_jobs.h"
 
 
+typedef int (*process_req_fn) (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+
+
 /*
  * STATIC FUNCTION DECLARATIONS
  */
@@ -234,6 +237,14 @@ static int BrapiHandler (request_rec *req_p)
 						{
 							int success = 0;
 							apr_table_t *params_p = NULL;
+							process_req_fn brapi_functions [] =
+								{
+									IsLocationCall,
+									IsStudyCall,
+									IsTrialCall,
+									NULL
+								};
+							process_req_fn *current_brapi_fn_p = brapi_functions;
 
 							/* jump to the rest api call string */
 							api_call_s += strlen (S_BRAPI_API_S);
@@ -241,42 +252,18 @@ static int BrapiHandler (request_rec *req_p)
 							ap_args_to_table (req_p, &params_p);
 
 
-							/*
-							 * Locations
-							 */
-							success = IsLocationCall (req_p, api_call_s, params_p);
-							if (success == 1)
+							while (((*current_brapi_fn_p) != NULL) && (success == 0))
 								{
-									res = OK;
-								}
-							else if (success == 0)
-								{
-									/*
-									 * Studies
-									 */
-									success = IsStudyCall (req_p, api_call_s, params_p);
+									success = (*current_brapi_fn_p) (req_p, api_call_s, params_p);
 
 									if (success == 1)
 										{
 											res = OK;
 										}
-									else if (success == 0)
+									else
 										{
-											/*
-											 * Trials
-											 */
-											success = IsTrialCall (req_p, api_call_s, params_p);
-
-											if (success == 1)
-												{
-													res = OK;
-												}
-											else if (success == 0)
-												{
-
-												}
+											++ current_brapi_fn_p;
 										}
-
 								}
 						}
 
@@ -719,5 +706,13 @@ const char *GetParameterValue (apr_table_t *params_p, const char * const param_s
 		}
 
 	return value_s;
+}
+
+
+
+void GetSortSearchParameters (apr_table_t *params_p, const char **sort_by_ss, const char **sort_order_ss, apr_pool_t *pool_p)
+{
+	*sort_by_ss = GetParameterValue (params_p, "sortBy", pool_p);
+	*sort_order_ss = GetParameterValue (params_p, "sortOrder", pool_p);
 }
 

@@ -74,6 +74,8 @@ const char *GetParameterValue (apr_table_t *params_p, const char * const param_s
 
 bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *dest_p, const char *dest_key_s);
 
+void GetSortSearchParameters (apr_table_t *params_p, const char **sort_by_ss, const char **sort_order_ss, apr_pool_t *pool_p);
+
 
 
 #endif /* SERVERS_BRAPI_MODULE_INCLUDE_BRAPI_MODULE_H_ */

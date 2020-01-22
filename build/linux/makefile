@@ -37,6 +37,7 @@ INSTALLED    := $(INSTALL_DIR)/mod_$(MODNAME).so
 BUILD_DIR := build
 
 CFILES := \
+	brapi_method.c \
 	brapi_module.c \
 	brapi_location.c \
 	brapi_study.c \

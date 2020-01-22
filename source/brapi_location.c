@@ -40,11 +40,12 @@
 #include "location_jobs.h"
 
 
-
 static bool SetValidString (json_t *json_p, const char *key_s, const char *value_s);
 
 
 static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p);
+
+
 
 
 int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)

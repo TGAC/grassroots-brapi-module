@@ -72,6 +72,15 @@ int IsTrialCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, FIELD_TRIAL_SEARCH.npt_type, FIELD_TRIAL_SEARCH.npt_name_s, NULL, NULL, value, PL_ALL))
 						{
 							apr_pool_t *pool_p = req_p -> pool;
+							const char *sort_by_s = NULL;
+							const char *sort_order_s = NULL;
+							const char *page_number_s = NULL;
+							const char *page_index_s = NULL;
+							const char *location_id_s = GetParameterValue (req_params_p, "locationDbId", pool_p);
+							const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
+							const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
+
+							GetSortSearchParameters (req_params_p, &sort_by_s, &sort_order_s, pool_p);
 
 							if (success_flag)
 								{
