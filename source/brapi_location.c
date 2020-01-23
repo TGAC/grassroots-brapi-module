@@ -66,11 +66,11 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 					InitSharedType (&value);
 					value.st_boolean_value = true;
 
-					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Locations", NULL, NULL, value, PL_ALL))
+					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, LOCATION_GET_ALL_LOCATIONS.npt_type, LOCATION_GET_ALL_LOCATIONS.npt_name_s, NULL, NULL, value, PL_ALL))
 						{
 							params_p -> ps_current_level = PL_ADVANCED;
 							res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
-						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
+						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, LOCATION_GET_ALL_LOCATIONS.npt_type, LOCATION_GET_ALL_LOCATIONS.npt_name_s, NULL, NULL, value, PL_ALL)) */
 
 					FreeParameterSet (params_p);
 				}		/* if (params_p) */

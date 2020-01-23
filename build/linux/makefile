@@ -41,6 +41,7 @@ CFILES := \
 	brapi_module.c \
 	brapi_location.c \
 	brapi_study.c \
+	brapi_trait.c \
 	brapi_trial.c
 
 VPATH := $(DIR_SRC)

@@ -29,6 +29,7 @@
 
 #include "brapi_location.h"
 #include "brapi_study.h"
+#include "brapi_trait.h"
 #include "brapi_trial.h"
 
 #include "parameter_set.h"
@@ -48,6 +49,7 @@
 #define	ALLOCATE_STUDY_TAGS (1)
 #define ALLOCATE_STUDY_JOB_CONSTANTS (1)
 #define ALLOCATE_LOCATION_JOB_CONSTANTS (1)
+#define ALLOCATE_TREATMENT_CONSTANTS (1)
 
 #include "crop.h"
 #include "field_trial.h"
@@ -56,6 +58,7 @@
 #include "study_jobs.h"
 #include "location.h"
 #include "location_jobs.h"
+#include "treatment_jobs.h"
 
 
 typedef int (*process_req_fn) (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
@@ -242,6 +245,7 @@ static int BrapiHandler (request_rec *req_p)
 									IsLocationCall,
 									IsStudyCall,
 									IsTrialCall,
+									IsTraitCall,
 									NULL
 								};
 							process_req_fn *current_brapi_fn_p = brapi_functions;
