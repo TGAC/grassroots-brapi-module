@@ -40,6 +40,7 @@
 
 #include "streams.h"
 
+#include "boolean_parameter.h"
 
 
 
@@ -118,11 +119,6 @@ int IsMethodCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_p
 
 							if (params_p)
 								{
-									SharedType value;
-
-									InitSharedType (&value);
-									value.st_string_value_s = (char *) id_s;
-
 									FreeParameterSet (params_p);
 								}		/* if (params_p) */
 
@@ -135,12 +131,9 @@ int IsMethodCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_p
 
 					if (params_p)
 						{
-							SharedType value;
+							bool value = true;
 
-							InitSharedType (&value);
-							value.st_boolean_value = true;
-
-							if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Locations", NULL, NULL, value, PL_ALL))
+							if (EasyCreateAndAddBooleanParameterToParameterSet (NULL, params_p, NULL, "Get all Locations", NULL, NULL, &value, PL_ALL))
 								{
 									params_p -> ps_current_level = PL_ADVANCED;
 									res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsMethodToBrapi);

@@ -120,12 +120,9 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 			if (params_p)
 				{
 					bool params_success_flag = false;
-					SharedType value;
-					InitSharedType (&value);
+					bool value = true;
 
-					value.st_boolean_value = true;
-
-					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, STUDY_SEARCH_STUDIES.npt_type, STUDY_SEARCH_STUDIES.npt_name_s, NULL, NULL, value, PL_ALL))
+					if (EasyCreateAndAddBooleanParameterToParameterSet (NULL, params_p, NULL, STUDY_SEARCH_STUDIES.npt_name_s, NULL, NULL, &value, PL_ALL))
 						{
 							const char *study_id_s = apr_table_get (req_params_p, "studyDbId");
 
@@ -134,9 +131,7 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 							 */
 							if (study_id_s)
 								{
-									value.st_string_value_s = (char *) study_id_s;
-
-									if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, STUDY_ID.npt_type, STUDY_ID.npt_name_s, NULL, NULL, value, PL_ALL))
+									if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, STUDY_ID.npt_type, STUDY_ID.npt_name_s, NULL, NULL, study_id_s, PL_ALL))
 										{
 											params_success_flag = true;
 										}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */

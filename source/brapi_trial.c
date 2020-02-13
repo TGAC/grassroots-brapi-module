@@ -42,6 +42,9 @@
 #include "field_trial.h"
 #include "field_trial_jobs.h"
 
+#include "boolean_parameter.h"
+#include "string_parameter.h"
+
 
 static json_t *ConvertGrassrootsTrialToBrapi (const json_t *grassroots_json_p);
 
@@ -64,12 +67,9 @@ int IsTrialCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 			if (params_p)
 				{
 					bool success_flag = true;
-					SharedType value;
+					bool value = true;
 
-					InitSharedType (&value);
-					value.st_boolean_value = true;
-
-					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, FIELD_TRIAL_SEARCH.npt_type, FIELD_TRIAL_SEARCH.npt_name_s, NULL, NULL, value, PL_ALL))
+					if (EasyCreateAndAddBooleanParameterToParameterSet (NULL, params_p, NULL, FIELD_TRIAL_SEARCH.npt_name_s, NULL, NULL, &value, PL_ALL))
 						{
 							apr_pool_t *pool_p = req_p -> pool;
 							const char *sort_by_s = NULL;
@@ -113,12 +113,7 @@ int IsTrialCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 							if (params_p)
 								{
-									SharedType value;
-
-									InitSharedType (&value);
-									value.st_string_value_s = (char *) trial_id_s;
-
-									if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, FIELD_TRIAL_ID.npt_type, FIELD_TRIAL_ID.npt_name_s, NULL, NULL, value, PL_ALL))
+									if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, FIELD_TRIAL_ID.npt_type, FIELD_TRIAL_ID.npt_name_s, NULL, NULL, trial_id_s, PL_ALL))
 										{
 											params_p -> ps_current_level = PL_ADVANCED;
 											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsTrialToBrapi);

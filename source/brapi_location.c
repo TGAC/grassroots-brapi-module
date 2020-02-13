@@ -39,6 +39,9 @@
 #include "study.h"
 #include "location_jobs.h"
 
+#include "boolean_parameter.h"
+#include "string_parameter.h"
+
 
 static bool SetValidString (json_t *json_p, const char *key_s, const char *value_s);
 
@@ -61,12 +64,9 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 
 			if (params_p)
 				{
-					SharedType value;
+					bool value = true;
 
-					InitSharedType (&value);
-					value.st_boolean_value = true;
-
-					if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, LOCATION_GET_ALL_LOCATIONS.npt_type, LOCATION_GET_ALL_LOCATIONS.npt_name_s, NULL, NULL, value, PL_ALL))
+					if (EasyCreateAndAddBooleanParameterToParameterSet (NULL, params_p, NULL, LOCATION_GET_ALL_LOCATIONS.npt_name_s, NULL, NULL, &value, PL_ALL))
 						{
 							params_p -> ps_current_level = PL_ADVANCED;
 							res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
@@ -93,12 +93,7 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 
 							if (params_p)
 								{
-									SharedType value;
-
-									InitSharedType (&value);
-									value.st_string_value_s = (char *) location_id_s;
-
-									if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, LOCATION_ID.npt_type, LOCATION_ID.npt_name_s, NULL, NULL, value, PL_ALL))
+									if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, LOCATION_ID.npt_type, LOCATION_ID.npt_name_s, NULL, NULL, location_id_s, PL_ALL))
 										{
 											params_p -> ps_current_level = PL_ADVANCED;
 											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);

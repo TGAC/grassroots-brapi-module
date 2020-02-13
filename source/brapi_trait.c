@@ -27,6 +27,8 @@
 
 #include "treatment_jobs.h"
 
+#include "string_parameter.h"
+#include "boolean_parameter.h"
 
 
 static json_t *ConvertGrassrootsTraitToBrapi (const json_t *grassroots_json_p);
@@ -52,12 +54,7 @@ int IsTraitCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 							if (params_p)
 								{
-									SharedType value;
-
-									InitSharedType (&value);
-									value.st_string_value_s = (char *) id_s;
-
-									if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, TR_TRAIT_ID.npt_type, TR_TRAIT_ID.npt_name_s, NULL, NULL, value, PL_ALL))
+									if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, TR_TRAIT_ID.npt_type, TR_TRAIT_ID.npt_name_s, NULL, NULL, id_s, PL_ALL))
 										{
 											params_p -> ps_current_level = PL_ADVANCED;
 											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsTraitToBrapi);
@@ -75,12 +72,9 @@ int IsTraitCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 					if (params_p)
 						{
-							SharedType value;
+							bool value = true;
 
-							InitSharedType (&value);
-							value.st_boolean_value = true;
-
-							if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Get all Locations", NULL, NULL, value, PL_ALL))
+							if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, "Get all Locations", NULL, NULL, &value, PL_ALL))
 								{
 									params_p -> ps_current_level = PL_ADVANCED;
 									res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsTraitToBrapi);
