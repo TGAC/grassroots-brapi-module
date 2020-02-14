@@ -42,6 +42,10 @@
 #include "streams.h"
 #include "study_jobs.h"
 
+#include "boolean_parameter.h"
+#include "time_parameter.h"
+
+
 static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p);
 
 static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_response_p);
@@ -149,16 +153,9 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 											if (GetCurrentTime (&current_time))
 												{
-													char *current_date_s = GetTimeAsString (&current_time, false);
-
-													if (current_date_s)
+													if (EasyCreateAndAddTimeParameterToParameterSet (NULL, params_p, NULL, STUDY_SEARCH_ACTIVE_DATE.npt_name_s, NULL, NULL, &current_time, PL_ALL))
 														{
-															if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, STUDY_SEARCH_ACTIVE_DATE.npt_type, STUDY_SEARCH_ACTIVE_DATE.npt_name_s, NULL, NULL, value, PL_ALL))
-																{
-																	params_success_flag = true;
-																}
-
-															FreeCopiedString (current_date_s);
+															params_success_flag = true;
 														}
 												}
 

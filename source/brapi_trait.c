@@ -22,6 +22,7 @@
 
 
 #include "brapi_trait.h"
+#include "brapi_module.h"
 
 #include "parameter_set.h"
 
@@ -74,7 +75,7 @@ int IsTraitCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 						{
 							bool value = true;
 
-							if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, "Get all Locations", NULL, NULL, &value, PL_ALL))
+							if (EasyCreateAndAddBooleanParameterToParameterSet (NULL, params_p, NULL, "Get all Locations", NULL, NULL, &value, PL_ALL))
 								{
 									params_p -> ps_current_level = PL_ADVANCED;
 									res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsTraitToBrapi);
