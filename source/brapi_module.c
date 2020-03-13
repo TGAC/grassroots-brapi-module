@@ -49,7 +49,7 @@
 #define	ALLOCATE_STUDY_TAGS (1)
 #define ALLOCATE_STUDY_JOB_CONSTANTS (1)
 #define ALLOCATE_LOCATION_JOB_CONSTANTS (1)
-#define ALLOCATE_TREATMENT_CONSTANTS (1)
+#define ALLOCATE_MEASURED_VARIABLE_CONSTANTS (1)
 
 #include "crop.h"
 #include "field_trial.h"
@@ -58,7 +58,7 @@
 #include "study_jobs.h"
 #include "location.h"
 #include "location_jobs.h"
-#include "treatment_jobs.h"
+#include "measured_variable_jobs.h"
 
 
 typedef int (*process_req_fn) (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);

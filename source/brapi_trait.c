@@ -26,7 +26,7 @@
 
 #include "parameter_set.h"
 
-#include "treatment_jobs.h"
+#include "measured_variable_jobs.h"
 
 #include "string_parameter.h"
 #include "boolean_parameter.h"
@@ -55,7 +55,7 @@ int IsTraitCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 
 							if (params_p)
 								{
-									if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, TR_TRAIT_ID.npt_type, TR_TRAIT_ID.npt_name_s, NULL, NULL, id_s, PL_ALL))
+									if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, MV_TRAIT_ID.npt_type, MV_TRAIT_ID.npt_name_s, NULL, NULL, id_s, PL_ALL))
 										{
 											params_p -> ps_current_level = PL_ADVANCED;
 											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsTraitToBrapi);
