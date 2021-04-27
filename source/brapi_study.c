@@ -48,7 +48,7 @@
 
 static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p);
 
-static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_response_p);
+//static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_response_p);
 
 static bool SetStudyCurrentCrop (const json_t *grassroots_data_p, json_t *brapi_response_p);
 
@@ -144,7 +144,7 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 							else
 								{
 									apr_pool_t *pool_p = req_p -> pool;
-//									const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
+									const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
 									const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
 
 
@@ -335,7 +335,7 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 														{
 															if (SetStudyCurrentCrop (grassroots_data_p, brapi_response_p))
 																{
-																	SetStudyActivity (grassroots_data_p, brapi_response_p);
+																	//SetStudyActivity (grassroots_data_p, brapi_response_p);
 
 																	AddAdditionalInfo (grassroots_data_p, brapi_response_p);
 
@@ -364,33 +364,36 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 }
 
 
+/*
 static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_response_p)
 {
 	bool success_flag = false;
 	struct tm current_time;
+	const char *active_s = NULL;
 
 	if (GetCurrentTime (&current_time))
 		{
-			const char *start_time_s = NULL; //GetJSONString (grassroots_data_p, ST_SOWING_DATE_S);
-			const char *end_time_s = NULL; //GetJSONString (grassroots_data_p, ST_HARVEST_DATE_S);
+			const uint32 current_year = ((uint32) current_time.tm_year) + 1900;
+			uint32 *sowing_year_p = NULL;
 
-			if (start_time_s)
+
+			GetJSONUnsignedInteger (grassroots_data_p, ST_SOWING_YEAR_S, sowing_year_p);
+
+			if (sowing_year_p)
 				{
-					struct tm *start_time_p = GetTimeFromString (start_time_s);
+					ConvertUnsignedIntegerToString (*sowing_year_p)
+					if (!SetJSONString (brapi_response_p, "startDate", end_time_s)))
 
-					if (start_time_p)
+
+					if (current_year >= *sowing_year_p)
 						{
-							const char *active_s = NULL;
-							struct tm *end_time_p = NULL;
+							uint32 *harvest_year_p = NULL;
 
-							if (end_time_s)
-								{
-									end_time_p = GetTimeFromString (end_time_s);
-								}
+							GetJSONUnsignedInteger (grassroots_data_p, ST_HARVEST_YEAR_S, harvest_year_p);
 
-							if (CompareDates (&current_time, start_time_p, true) >= 0)
+							if (harvest_year_p)
 								{
-									if ((!end_time_p) || (CompareDates (&current_time, end_time_p, true) <= 0))
+									if (current_year <= *harvest_year_p)
 										{
 											active_s = "true";
 										}
@@ -400,32 +403,19 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 										}
 								}
 
-							if (SetJSONString (brapi_response_p, "startDate", start_time_s))
-								{
-									if ((!end_time_s) || (SetJSONString (brapi_response_p, "endDate", end_time_s)))
-										{
-											if ((!active_s) || (SetJSONString (brapi_response_p, "active", active_s)))
-												{
-
-												}
-
-										}		/* if ((!end_time_s) || (SetJSONString (brapi_response_p, "startDate", end_time_s))) */
-
-								}		/* if (SetJSONString (brapi_response_p, "startDate", start_time_s)) */
-
 						}
 					else
 						{
-							PrintErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, "Failed to convert \"%s\" to a time", start_time_s);
+							active_s = "false";
 						}
+				}
+		}
 
-				}		/* if (start_time_s) */
 
-		}		/* if (GetCurrentTime (&current_time)) */
 
 	return success_flag;
 }
-
+*/
 
 bool SetStudyLocationData (const json_t *grassroots_data_p, json_t *brapi_response_p)
 {
