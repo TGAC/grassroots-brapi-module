@@ -144,26 +144,11 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 							else
 								{
 									apr_pool_t *pool_p = req_p -> pool;
-									const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
+//									const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
 									const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
 
-									if (active_s && (strcmp (active_s, "true") == 0))
-										{
-											struct tm current_time;
 
-											if (GetCurrentTime (&current_time))
-												{
-													if (EasyCreateAndAddTimeParameterToParameterSet (NULL, params_p, NULL, STUDY_SEARCH_ACTIVE_DATE.npt_name_s, NULL, NULL, &current_time, PL_ALL))
-														{
-															params_success_flag = true;
-														}
-												}
-
-										}		/* if (active_s && (strcmp (active_s, "true" == 0))) */
-									else
-										{
-											params_success_flag = true;
-										}
+									params_success_flag = true;
 
 								}
 
@@ -386,8 +371,8 @@ static bool SetStudyActivity (const json_t *grassroots_data_p, json_t *brapi_res
 
 	if (GetCurrentTime (&current_time))
 		{
-			const char *start_time_s = GetJSONString (grassroots_data_p, ST_SOWING_DATE_S);
-			const char *end_time_s = GetJSONString (grassroots_data_p, ST_HARVEST_DATE_S);
+			const char *start_time_s = NULL; //GetJSONString (grassroots_data_p, ST_SOWING_DATE_S);
+			const char *end_time_s = NULL; //GetJSONString (grassroots_data_p, ST_HARVEST_DATE_S);
 
 			if (start_time_s)
 				{
