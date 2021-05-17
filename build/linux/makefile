@@ -105,7 +105,6 @@ CFLAGS +=                              \
 	-g3                            \
 	-ggdb                          \
 	-O0							\
-	-pg \
 	-pedantic                      \
 	$(addprefix -W, $(WARNINGS))   \
 	$(addprefix -D, $(MACROS)) \
