@@ -287,7 +287,7 @@ int DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*con
 	if (grassroots_request_p)
 		{
 			ModBrapiConfig *config_p = ap_get_module_config (req_p -> per_dir_config, &grassroots_brapi_module);
-			Connection *connection_p = AllocateWebServerConnection (config_p -> mbc_grassroots_url_s);
+			Connection *connection_p = AllocateWebServerConnection (config_p -> mbc_grassroots_url_s, CM_FILE);
 
 			if (connection_p)
 				{
