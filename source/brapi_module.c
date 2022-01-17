@@ -318,7 +318,7 @@ int DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*con
 														}
 													else
 														{
-															int i;
+															json_int_t i;
 															/* Get the job status */
 
 															if (GetJSONInteger(service_results_p, SERVICE_STATUS_VALUE_S, &i))
