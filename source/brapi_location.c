@@ -143,7 +143,7 @@ bool GetMinimalLocationData (const json_t *grassroots_json_p, char **name_ss, ch
 											return true;
 										}
 
-									FreeCopiedString (id_s);
+									FreeBSONOidString (id_s);
 								}
 						}
 				}

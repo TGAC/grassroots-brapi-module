@@ -346,7 +346,7 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 														}
 												}
 
-											FreeCopiedString (id_s);
+											FreeBSONOidString (id_s);
 										}
 								}
 						}
@@ -497,7 +497,7 @@ static bool AddParentTrialData (const json_t *grassroots_data_p, json_t *brapi_r
 											PrintJSONToErrors (STM_LEVEL_WARNING, __FILE__, __LINE__, brapi_response_p, "Failed set trialDbId to \"%s\"", id_s);
 										}
 
-									FreeCopiedString (id_s);
+									FreeBSONOidString (id_s);
 								}
 							else
 								{

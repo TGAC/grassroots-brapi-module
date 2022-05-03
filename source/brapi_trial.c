@@ -166,7 +166,7 @@ static json_t *ConvertGrassrootsTrialToBrapi (const json_t *grassroots_json_p)
 														}
 												}
 
-											FreeCopiedString (id_s);
+											FreeBSONOidString (id_s);
 										}
 								}
 						}
@@ -330,7 +330,7 @@ static bool ConvertGrassrootsStudy (const json_t *grassroots_study_p, json_t *br
 												}
 										}
 
-									FreeCopiedString (id_s);
+									FreeBSONOidString (id_s);
 								}
 						}
 				}
