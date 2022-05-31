@@ -32,7 +32,7 @@ LIB_PATHS := /usr/lib/gcc/x86_64-linux-gnu/5
 # ---------------
 #
 # This is the path for any extra header files that are required.
-# mod_eirods_dav now uses jansson to build its JSON objects
+# mod_grassroots_brapi now uses jansson to build its JSON objects
 # so this needs to be added to the include path. As this is part
 # irods-externals package, you can use that
 #
