@@ -9,6 +9,17 @@ Currently there is limited support for the BrAPI 1.x specification for Studies, 
 The plan is to update this to version 2.x and extend the support to cover more of the datatypes.
 
 
+# Building the module
+
+To build the module you need to create a ```build/linux/user.prefs``` 
+file. To do this you can copy and edit the example file
+
+```
+cp build/linux/example-user.prefs build/linux/user.prefs
+```
+
+And then edit the values in there to match your system. 
+
 # Configuration
 
 The only configuration parameter required is the web address of the Grassroots server running 
