@@ -32,3 +32,7 @@ LoadModule grassroots_brapi_module modules/mod_grassroots_brapi.so
         GrassrootsURL http://localhost:8080/grassroots/public
 </Location>
 ```
+
+So for example a call to *http://localhost:8080/grassroots/brapi/brapi/v1/studies* will get all of the 
+Studies in the system. See the [Get Studies](https://brapi.docs.apiary.io/#reference/study/studies/get-studies) 
+endpoint for more information.
