@@ -26,7 +26,7 @@
 #include "time_util.h"
 
 #include "programme.h"
-#include "field_trial_jobs.h"
+#include "programme_jobs.h"
 
 #include "boolean_parameter.h"
 #include "string_parameter.h"
@@ -68,8 +68,33 @@ int IsProgramCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_
 {
 	int res = 0;
 	const char *signature_s = "programs";
+	const char *id_s = NULL;
 
 	if (strcmp (api_call_s, signature_s) == 0)
+		{
+			id_s = "*";
+		}
+	else
+		{
+			signature_s = "programs/";
+			size_t l = strlen (signature_s);
+
+			if (strncmp (api_call_s, signature_s, l) == 0)
+				{
+					const char *programme_id_s = api_call_s + l;
+
+					if (strlen (programme_id_s) > 0)
+						{
+							id_s = programme_id_s;
+						}
+					else
+						{
+							res = -1;
+						}
+				}
+		}
+
+	if (id_s)
 		{
 			ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
 
@@ -78,9 +103,9 @@ int IsProgramCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_
 			if (params_p)
 				{
 					bool success_flag = true;
-					bool value = true;
+					const char *all_ids_s = "*";
 
-					if (EasyCreateAndAddBooleanParameterToParameterSet (NULL, params_p, NULL, FIELD_TRIAL_SEARCH.npt_name_s, NULL, NULL, &value, PL_ALL))
+					if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, PROGRAMME_SEARCH.npt_type, PROGRAMME_SEARCH.npt_name_s, NULL, NULL, all_ids_s, PL_ALL))
 						{
 							apr_pool_t *pool_p = req_p -> pool;
 							const char *sort_by_s = NULL;
@@ -100,46 +125,15 @@ int IsProgramCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_
 								}
 
 
-						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Search Experimental Areas", NULL, NULL, value, PL_ALL)) */
-
+						}		/* if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, PROGRAMME_SEARCH.npt_type, PROGRAMME_SEARCH.npt_name_s, NULL, NULL, all_ids_s, PL_ALL)) */
 
 					FreeParameterSet (params_p);
 				}		/* if (params_p) */
 
-		}
+		}		/* if (id_s) */
 	else
 		{
-			signature_s = "programs/";
-			size_t l = strlen (signature_s);
-
-			if (strncmp (api_call_s, signature_s, l) == 0)
-				{
-					const char *trial_id_s = api_call_s + l;
-
-					if (strlen (trial_id_s) > 0)
-						{
-							ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
-
-							res = -1;
-
-							if (params_p)
-								{
-									if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, FIELD_TRIAL_ID.npt_type, FIELD_TRIAL_ID.npt_name_s, NULL, NULL, trial_id_s, PL_ALL))
-										{
-											params_p -> ps_current_level = PL_ADVANCED;
-											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsProgrammeToBrapi);
-										}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
-
-									FreeParameterSet (params_p);
-								}		/* if (params_p) */
-
-
-						}
-					else
-						{
-							res = -1;
-						}
-				}
+			res = 0;
 		}
 
 	return res;
