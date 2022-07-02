@@ -568,7 +568,10 @@ bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *de
 		}
 	else
 		{
-			success_flag = true;
+			if (SetJSONNull (dest_p, dest_key_s))
+				{
+					success_flag = true;
+				}
 		}
 
 	return success_flag;

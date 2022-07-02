@@ -40,6 +40,7 @@ CFILES := \
 	brapi_method.c \
 	brapi_module.c \
 	brapi_location.c \
+	brapi_program.c \
 	brapi_study.c \
 	brapi_trait.c \
 	brapi_trial.c
