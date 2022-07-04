@@ -43,6 +43,14 @@
 module AP_MODULE_DECLARE_DATA grassroots_brapi_module;
 
 
+typedef enum
+{
+	AS_IGNORED,
+	AS_FAILED,
+	AS_SUCCEEDED
+} APIStatus;
+
+
 /**
  * @brief The configuration for the Grassroots BrAPI module.
  */
@@ -64,7 +72,7 @@ json_t *GetGrassrootsRequest (ParameterSet *params_p);
 json_t *CreateResponseJSONForResult (json_t *payload_array_p, const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages);
 
 
-int DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*convert_grassroots_to_brapi_fn) (const json_t *grassroots_result_p));
+APIStatus DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*convert_grassroots_to_brapi_fn) (const json_t *grassroots_result_p));
 
 
 char *GetObjectIdString (const json_t * const grassroots_json_p);

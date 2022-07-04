@@ -13,9 +13,12 @@
 #include "httpd.h"
 #include "util_script.h"
 
+#include "brapi_module.h"
 
-int IsProgramCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
 
+APIStatus GetAllProgrammes (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+
+APIStatus GetProgrammeByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
 
 
 #endif /* SERVERS_BRAPI_MODULE_INCLUDE_BRAPI_PROGRAM_H_ */

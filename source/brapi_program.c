@@ -25,11 +25,16 @@
 #include "string_utils.h"
 #include "time_util.h"
 
+#define ALLOCATE_PROGRAMME_TAGS (1)
 #include "programme.h"
+
+#define ALLOCATE_PROGRAMME_JOB_CONSTANTS (1)
 #include "programme_jobs.h"
 
 #include "boolean_parameter.h"
 #include "string_parameter.h"
+
+static APIStatus DoProgrammesSearch (const char *id_s, request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
 
 
 static json_t *ConvertGrassrootsProgrammeToBrapi (const json_t *grassroots_json_p);
@@ -64,77 +69,84 @@ static bool AddProgrammeType (const json_t *grassroots_programme_p, json_t *brap
 
 
 
-int IsProgramCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+
+APIStatus GetAllProgrammes (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
 {
-	int res = 0;
+	APIStatus res = AS_IGNORED;
 	const char *signature_s = "programs";
-	const char *id_s = NULL;
 
 	if (strcmp (api_call_s, signature_s) == 0)
 		{
-			id_s = "*";
+			res = DoProgrammesSearch ("*", req_p, api_call_s, req_params_p);
 		}
-	else
+
+	return res;
+
+}
+
+APIStatus GetProgrammeByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+{
+	APIStatus res = AS_IGNORED;
+	const char *id_s = NULL;
+	const char *signature_s = "programs/";
+	size_t l = strlen (signature_s);
+
+	if (strncmp (api_call_s, signature_s, l) == 0)
 		{
-			signature_s = "programs/";
-			size_t l = strlen (signature_s);
+			const char *programme_id_s = api_call_s + l;
 
-			if (strncmp (api_call_s, signature_s, l) == 0)
+			if (strlen (programme_id_s) > 0)
 				{
-					const char *programme_id_s = api_call_s + l;
-
-					if (strlen (programme_id_s) > 0)
-						{
-							id_s = programme_id_s;
-						}
-					else
-						{
-							res = -1;
-						}
+					res = DoProgrammesSearch (programme_id_s, req_p, api_call_s, req_params_p);
+				}
+			else
+				{
+					res = AS_FAILED;
 				}
 		}
 
-	if (id_s)
+
+	return res;
+}
+
+
+static APIStatus DoProgrammesSearch (const char *id_s, request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+{
+	APIStatus res = AS_FAILED;
+
+	ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
+
+	if (params_p)
 		{
-			ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
+			bool success_flag = true;
+			const char *all_ids_s = "*";
 
-			res = -1;
-
-			if (params_p)
+			if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, PROGRAMME_SEARCH.npt_type, PROGRAMME_SEARCH.npt_name_s, NULL, NULL, all_ids_s, PL_ALL))
 				{
-					bool success_flag = true;
-					const char *all_ids_s = "*";
+					apr_pool_t *pool_p = req_p -> pool;
+					const char *sort_by_s = NULL;
+					const char *sort_order_s = NULL;
+					const char *page_number_s = NULL;
+					const char *page_index_s = NULL;
+					const char *location_id_s = GetParameterValue (req_params_p, "locationDbId", pool_p);
+					const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
+					const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
 
-					if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, PROGRAMME_SEARCH.npt_type, PROGRAMME_SEARCH.npt_name_s, NULL, NULL, all_ids_s, PL_ALL))
+					GetSortSearchParameters (req_params_p, &sort_by_s, &sort_order_s, pool_p);
+
+					if (success_flag)
 						{
-							apr_pool_t *pool_p = req_p -> pool;
-							const char *sort_by_s = NULL;
-							const char *sort_order_s = NULL;
-							const char *page_number_s = NULL;
-							const char *page_index_s = NULL;
-							const char *location_id_s = GetParameterValue (req_params_p, "locationDbId", pool_p);
-							const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
-							const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
-
-							GetSortSearchParameters (req_params_p, &sort_by_s, &sort_order_s, pool_p);
-
-							if (success_flag)
-								{
-									params_p -> ps_current_level = PL_ADVANCED;
-									res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsProgrammeToBrapi);
-								}
+							params_p -> ps_current_level = PL_ADVANCED;
+							res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsProgrammeToBrapi);
+						}
 
 
-						}		/* if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, PROGRAMME_SEARCH.npt_type, PROGRAMME_SEARCH.npt_name_s, NULL, NULL, all_ids_s, PL_ALL)) */
+				}		/* if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, PROGRAMME_SEARCH.npt_type, PROGRAMME_SEARCH.npt_name_s, NULL, NULL, all_ids_s, PL_ALL)) */
 
-					FreeParameterSet (params_p);
-				}		/* if (params_p) */
+			FreeParameterSet (params_p);
+		}		/* if (params_p) */
 
-		}		/* if (id_s) */
-	else
-		{
-			res = 0;
-		}
+
 
 	return res;
 }

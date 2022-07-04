@@ -26,8 +26,13 @@
 #include "httpd.h"
 #include "util_script.h"
 
+#include "brapi_module.h"
 
-int IsTrialCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+
+APIStatus GetAllTrials (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+
+APIStatus GetTrialByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+
 
 
 

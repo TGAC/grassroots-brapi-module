@@ -28,6 +28,7 @@
 #include "mongodb_tool.h"
 
 #include "brapi_location.h"
+#include "brapi_program.h"
 #include "brapi_study.h"
 #include "brapi_trait.h"
 #include "brapi_trial.h"
@@ -51,6 +52,8 @@
 #define ALLOCATE_LOCATION_JOB_CONSTANTS (1)
 #define ALLOCATE_MEASURED_VARIABLE_CONSTANTS (1)
 
+
+
 #include "crop.h"
 #include "field_trial.h"
 #include "field_trial_jobs.h"
@@ -61,7 +64,7 @@
 #include "measured_variable_jobs.h"
 
 
-typedef int (*process_req_fn) (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+typedef APIStatus (*process_req_fn) (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
 
 
 /*
@@ -238,14 +241,16 @@ static int BrapiHandler (request_rec *req_p)
 
 					if (api_call_s)
 						{
-							int success = 0;
+							APIStatus success = AS_IGNORED;
 							apr_table_t *params_p = NULL;
 							process_req_fn brapi_functions [] =
 								{
-									IsLocationCall,
-									IsStudyCall,
-									IsTrialCall,
-									IsTraitCall,
+									GetAllLocations,
+									GetLocationByID,
+									GetAllProgrammes,
+									GetProgrammeByID,
+									GetAllTrials,
+									GetTrialByID,
 									NULL
 								};
 							process_req_fn *current_brapi_fn_p = brapi_functions;
@@ -256,18 +261,28 @@ static int BrapiHandler (request_rec *req_p)
 							ap_args_to_table (req_p, &params_p);
 
 
-							while (((*current_brapi_fn_p) != NULL) && (success == 0))
+							while (((*current_brapi_fn_p) != NULL) && (success == AS_IGNORED))
 								{
 									success = (*current_brapi_fn_p) (req_p, api_call_s, params_p);
 
-									if (success == 1)
+									switch (success)
 										{
-											res = OK;
+											case AS_IGNORED:
+												++ current_brapi_fn_p;
+												break;
+
+											case AS_SUCCEEDED:
+												res = OK;
+												current_brapi_fn_p = NULL;
+												break;
+
+											case AS_FAILED:
+												res = HTTP_INTERNAL_SERVER_ERROR;
+												current_brapi_fn_p = NULL;
+												break;
+
 										}
-									else
-										{
-											++ current_brapi_fn_p;
-										}
+
 								}
 						}
 
@@ -279,9 +294,9 @@ static int BrapiHandler (request_rec *req_p)
 }
 
 
-int DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*convert_grassroots_to_brapi_fn) (const json_t *grassroots_result_p))
+APIStatus DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*convert_grassroots_to_brapi_fn) (const json_t *grassroots_result_p))
 {
-	int res = 0;
+	APIStatus res = AS_FAILED;
 	json_t *grassroots_request_p = GetGrassrootsRequest (params_p);
 
 	if (grassroots_request_p)
@@ -391,7 +406,7 @@ int DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*con
 																							ap_rputs (response_s, req_p);
 																							ap_set_content_type (req_p, "application/json");
 
-																							res = 1;
+																							res = AS_SUCCEEDED;
 																							free (response_s);
 																						}		/* if (repsonse_s) */
 																					else

@@ -110,9 +110,10 @@ static bool AddParentTrialData (const json_t *grassroots_data_p, json_t *brapi_r
 	String
  */
 
-int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+
+APIStatus GetAllStudies (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
 {
-	int res = 0;
+	APIStatus res = AS_IGNORED;
 	const char *signature_s = "studies";
 
 	if (strcmp (api_call_s, signature_s) == 0)
@@ -165,146 +166,25 @@ int IsStudyCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_pa
 				}		/* if (params_p) */
 
 		}
-	else
-		{
-			signature_s = "studies/";
-			size_t l = strlen (signature_s);
-
-			if (strncmp (api_call_s, signature_s, l) == 0)
-				{
-					res = -1;
-
-				}
-		}
 
 	return res;
 }
 
 
-
-/*
-
-	GRASSROOTS
-
-	{
-  "so:name": "DFW TKNIL Set 2",
-  "address": {
-    "_id": {
-      "$oid": "5bcdc8f8618dc26d670434d3"
-    },
-    "order": 0,
-    "address": {
-      "Address": {
-        "@type": "PostalAddress",
-        "name": "Mrs Salih's field",
-        "streetAddress": "Watton Road",
-        "addressLocality": "Bawburgh",
-        "addressRegion": "Norfolk",
-        "addressCountry": "GB",
-        "postalCode": "NR9 3LQ"
-      },
-      "location": {
-        "centre": {
-          "@type": "so:GeoCoordinates",
-          "latitude": 52.625714000000002,
-          "longitude": 1.185354
-        }
-      }
-    }
-  },
-  "sowing_date": "2017-11-10",
-  "harvest_date": "2018-08-04",
-  "_id": {
-    "$oid": "5bcdc979618dc26d682e4a52"
-  },
-  "@context": {
-    "so:": "http://schema.org/",
-    "co:": "http://www.cropontology.org/terms/"
-  }
-}
-
-	BRAPI
-
+APIStatus GetStudyByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
 {
-  "metadata": {
-    "datafiles": [],
-    "pagination": {
-      "currentPage": 0,
-      "pageSize": 2,
-      "totalCount": 2,
-      "totalPages": 1
-    },
-    "status": []
-  },
-  "result": {
-    "data": [
-      {
-        "active": "true",
-        "additionalInfo": {
-          "studyObjective": "Increase yield"
-        },
-        "commonCropName": "Tomatillo",
-        "documentationURL": "https://brapi.org",
-        "endDate": "2014-01-01",
-        "locationDbId": "1",
-        "locationName": "Location 1",
-        "name": "Study 1",
-        "programDbId": "1",
-        "programName": "Program 1",
-        "seasons": [
-          {
-            "season": "fall",
-            "seasonDbId": "1",
-            "year": "2011"
-          },
-          {
-            "season": "winter",
-            "seasonDbId": "2",
-            "year": "2012"
-          }
-        ],
-        "startDate": "2013-01-01",
-        "studyDbId": "1001",
-        "studyName": "Study 1",
-        "studyType": "Yield study",
-        "studyTypeDbId": "2",
-        "studyTypeName": "Yield study",
-        "trialDbId": "101",
-        "trialName": "Peru Yield Trial 1"
-      },
-      {
-        "active": "true",
-        "additionalInfo": {
-          "publications": "pmid:23643517318968"
-        },
-        "commonCropName": "Tomatillo",
-        "documentationURL": "https://brapi.org",
-        "endDate": "2015-01-01",
-        "locationDbId": "1",
-        "locationName": "Location 1",
-        "name": "Study 2",
-        "programDbId": "1",
-        "programName": "Program 1",
-        "seasons": [
-          {
-            "season": "winter",
-            "seasonDbId": "2",
-            "year": "2012"
-          }
-        ],
-        "startDate": "2014-01-01",
-        "studyDbId": "1002",
-        "studyName": "Study 2",
-        "studyType": "Yield study",
-        "studyTypeDbId": "2",
-        "studyTypeName": "Yield study",
-        "trialDbId": "101",
-        "trialName": "Peru Yield Trial 1"
-      }
-    ]
-  }
+	APIStatus res = AS_IGNORED;
+	const char *signature_s = "studies/";
+	size_t l = strlen (signature_s);
+
+	if (strncmp (api_call_s, signature_s, l) == 0)
+		{
+
+		}
+
+	return res;
 }
- */
+
 
 static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p)
 {

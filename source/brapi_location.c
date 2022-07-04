@@ -49,11 +49,9 @@ static bool SetValidString (json_t *json_p, const char *key_s, const char *value
 static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p);
 
 
-
-
-int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+APIStatus GetAllLocations (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
 {
-	int res = 0;
+	APIStatus res = AS_IGNORED;
 	const char *signature_s = "locations";
 
 	if (strcmp (api_call_s, signature_s) == 0)
@@ -76,40 +74,48 @@ int IsLocationCall (request_rec *req_p, const char *api_call_s, apr_table_t *req
 				}		/* if (params_p) */
 
 		}
-	else
+
+	return res;
+}
+
+
+
+APIStatus GetLocationByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+{
+	int res = 0;
+
+	const char *signature_s = "locations/";
+	size_t l = strlen (signature_s);
+
+	if (strncmp (api_call_s, signature_s, l) == 0)
 		{
-			signature_s = "locations/";
-			size_t l = strlen (signature_s);
+			const char *location_id_s = api_call_s + l;
 
-			if (strncmp (api_call_s, signature_s, l) == 0)
+			if (strlen (location_id_s) > 0)
 				{
-					const char *location_id_s = api_call_s + l;
+					ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
 
-					if (strlen (location_id_s) > 0)
+					res = -1;
+
+					if (params_p)
 						{
-							ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
-
-							res = -1;
-
-							if (params_p)
+							if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, LOCATION_ID.npt_type, LOCATION_ID.npt_name_s, NULL, NULL, location_id_s, PL_ALL))
 								{
-									if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, LOCATION_ID.npt_type, LOCATION_ID.npt_name_s, NULL, NULL, location_id_s, PL_ALL))
-										{
-											params_p -> ps_current_level = PL_ADVANCED;
-											res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
-										}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
+									params_p -> ps_current_level = PL_ADVANCED;
+									res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
+								}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PA_TYPE_BOOLEAN_S, "Get all Locations", NULL, NULL, value, PL_ALL)) */
 
-									FreeParameterSet (params_p);
-								}		/* if (params_p) */
+							FreeParameterSet (params_p);
+						}		/* if (params_p) */
 
 
-						}
-					else
-						{
-							res = -1;
-						}
+				}
+			else
+				{
+					res = -1;
 				}
 		}
+
 
 	return res;
 }
