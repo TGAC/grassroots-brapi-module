@@ -33,8 +33,9 @@ LIB_PATHS := /usr/lib/gcc/x86_64-linux-gnu/5
 #
 # This is the path for any extra header files that are required.
 # mod_grassroots_brapi now uses jansson to build its JSON objects
-# so this needs to be added to the include path. As this is part
-# irods-externals package, you can use that
+# so this needs to be added to the include path. It also needs 
+# the path to the include files for the grassroots_field_trials
+# service available at https://github.com/TGAC/grassroots-service-field-trial
 #
 # E.g.
 # INCLUDE_PATHS := /opt/irods-externals/jansson2.7-0/include
