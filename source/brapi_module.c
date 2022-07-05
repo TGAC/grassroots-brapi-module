@@ -108,7 +108,7 @@ static const command_rec s_grassroots_brapi_directives [] =
 		};
 
 
-static const char * const S_BRAPI_API_S = "/brapi/v1/";
+static const char * const S_BRAPI_API_S = "/brapi/v2/";
 
 
 /*
