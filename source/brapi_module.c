@@ -261,7 +261,7 @@ static int BrapiHandler (request_rec *req_p)
 							ap_args_to_table (req_p, &params_p);
 
 
-							while (((*current_brapi_fn_p) != NULL) && (success == AS_IGNORED))
+							while ((current_brapi_fn_p != NULL) && (success == AS_IGNORED))
 								{
 									success = (*current_brapi_fn_p) (req_p, api_call_s, params_p);
 

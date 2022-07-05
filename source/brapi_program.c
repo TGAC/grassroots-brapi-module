@@ -34,6 +34,7 @@
 #include "boolean_parameter.h"
 #include "string_parameter.h"
 
+
 static APIStatus DoProgrammesSearch (const char *id_s, request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
 
 
@@ -87,7 +88,6 @@ APIStatus GetAllProgrammes (request_rec *req_p, const char *api_call_s, apr_tabl
 APIStatus GetProgrammeByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
 {
 	APIStatus res = AS_IGNORED;
-	const char *id_s = NULL;
 	const char *signature_s = "programs/";
 	size_t l = strlen (signature_s);
 
@@ -119,9 +119,8 @@ static APIStatus DoProgrammesSearch (const char *id_s, request_rec *req_p, const
 	if (params_p)
 		{
 			bool success_flag = true;
-			const char *all_ids_s = "*";
 
-			if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, PROGRAMME_SEARCH.npt_type, PROGRAMME_SEARCH.npt_name_s, NULL, NULL, all_ids_s, PL_ALL))
+			if (EasyCreateAndAddStringParameterToParameterSet (NULL, params_p, NULL, PROGRAMME_SEARCH.npt_type, PROGRAMME_SEARCH.npt_name_s, NULL, NULL, id_s, PL_ALL))
 				{
 					apr_pool_t *pool_p = req_p -> pool;
 					const char *sort_by_s = NULL;
@@ -163,8 +162,6 @@ static json_t *ConvertGrassrootsProgrammeToBrapi (const json_t *grassroots_json_
 
 			if (brapi_response_p)
 				{
-					bool success_flag = false;
-
 					if (AddAbbreviation (grassroots_data_p, brapi_response_p))
 						{
 							if (AddAdditionalInfo (grassroots_data_p, brapi_response_p))
@@ -249,6 +246,12 @@ static bool AddCommonCropName (const json_t *grassroots_programme_p, json_t *bra
 {
 	bool success_flag = false;
 
+	if (CopyJSONStringValue (grassroots_programme_p, PR_CROP_S, brapi_programme_p, "commonCropName"))
+		{
+			success_flag = true;
+		}
+
+
 	return success_flag;
 }
 
@@ -306,10 +309,7 @@ static bool AddLeadPerson (const json_t *grassroots_programme_p, json_t *brapi_p
 		{
 			if (CopyJSONStringValue (pi_p, PE_NAME_S, brapi_programme_p, "leadPersonName"))
 				{
-					if (CopyJSONStringValue (pi_p, PE_EMAIL_S, brapi_programme_p, "leadPersonDbId"))
-						{
-							success_flag = true;
-						}
+					success_flag = true;
 				}
 		}		/* if (pi_p) */
 
