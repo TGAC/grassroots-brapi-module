@@ -102,10 +102,10 @@ static json_t *CreateMetadataResponse (const size_t current_page, const size_t p
  */
 
 static const command_rec s_grassroots_brapi_directives [] =
-		{
-				AP_INIT_TAKE1 ("GrassrootsURL", SetGrassrootsURL, NULL, ACCESS_CONF, "The url for the Grassroots controller to call"),
-				{ NULL }
-		};
+{
+	AP_INIT_TAKE1 ("GrassrootsURL", SetGrassrootsURL, NULL, ACCESS_CONF, "The url for the Grassroots controller to call"),
+	{ NULL }
+};
 
 
 static const char * const S_BRAPI_API_S = "/brapi/v2/";
@@ -118,15 +118,15 @@ static const char * const S_BRAPI_API_S = "/brapi/v2/";
 
 /* Define our module as an entity and assign a function for registering hooks  */
 module AP_MODULE_DECLARE_DATA grassroots_brapi_module =
-		{
-				STANDARD20_MODULE_STUFF,
-				CreateGrassrootsBrapiDirectoryConfig,   	// Per-directory configuration handler
-				MergeGrassrootsBrapiDirectoryConfig,   	// Merge handler for per-directory configurations
-				CreateGrassrootsBrapiServerConfig,				// Per-server configuration handler
-				MergeGrassrootsBrapiServerConfig,				// Merge handler for per-server configurations
-				s_grassroots_brapi_directives,			// Any directives we may have for httpd
-				RegisterHooks    					// Our hook registering function
-		};
+{
+	STANDARD20_MODULE_STUFF,
+	CreateGrassrootsBrapiDirectoryConfig,   	// Per-directory configuration handler
+	MergeGrassrootsBrapiDirectoryConfig,   	// Merge handler for per-directory configurations
+	CreateGrassrootsBrapiServerConfig,				// Per-server configuration handler
+	MergeGrassrootsBrapiServerConfig,				// Merge handler for per-server configurations
+	s_grassroots_brapi_directives,			// Any directives we may have for httpd
+	RegisterHooks    					// Our hook registering function
+};
 
 
 /*
@@ -277,7 +277,7 @@ static int BrapiHandler (request_rec *req_p)
 												break;
 
 											case AS_FAILED:
-												res = HTTP_INTERNAL_SERVER_ERROR;
+												res = HTTP_BAD_REQUEST;
 												current_brapi_fn_p = NULL;
 												break;
 
