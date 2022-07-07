@@ -39,7 +39,10 @@
 #include "string_utils.h"
 #include "time_util.h"
 
+#define ALLOCATE_FIELD_TRIAL_TAGS (1)
 #include "field_trial.h"
+
+#define ALLOCATE_FIELD_TRIAL_CONSTANTS (1)
 #include "field_trial_jobs.h"
 
 #include "boolean_parameter.h"
@@ -48,9 +51,39 @@
 
 static json_t *ConvertGrassrootsTrialToBrapi (const json_t *grassroots_json_p);
 
-static bool SetTrialStudiesData (const json_t *grassroots_data_p, json_t *brapi_response_p);
+static APIStatus DoTrialsSearch (const char *id_s, request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
 
-static bool ConvertGrassrootsStudy (const json_t *grassroots_study_p, json_t *brapi_studies_p);
+static bool AddActive (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddAdditionalInfo (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddCommonCropName (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddContacts (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddDatasetAuthorships (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddDocumentationURL (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddEndDate (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddExternalReferences (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddProgrammeDbId (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddProgrammeName (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddPublications (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddStartDate (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddTrialDbId (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddTrialDescription (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddTrialName (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
+
+static bool AddTrialPUI (const json_t *grassroots_trial_p, json_t *brapi_trial_p);
 
 
 
@@ -155,201 +188,258 @@ static json_t *ConvertGrassrootsTrialToBrapi (const json_t *grassroots_json_p)
 
 			if (brapi_response_p)
 				{
-					bool success_flag = false;
-
-					if (CopyJSONStringValue (grassroots_data_p, "so:name", brapi_response_p, "trialName"))
+					if (AddAbbreviation (grassroots_data_p, brapi_response_p))
 						{
-							bson_oid_t id;
-
-							if (GetMongoIdFromJSON (grassroots_data_p, &id))
+							if (AddAdditionalInfo (grassroots_data_p, brapi_response_p))
 								{
-									char *id_s = GetBSONOidAsString (&id);
-
-									if (id_s)
+									if (AddCommonCropName (grassroots_data_p, brapi_response_p))
 										{
-											if (SetJSONString (brapi_response_p, "trialDbId", id_s))
+											if (AddDocumentationURL (grassroots_data_p, brapi_response_p))
 												{
-													if (SetTrialStudiesData (grassroots_data_p, brapi_response_p))
+													if (AddExternalReferences (grassroots_data_p, brapi_response_p))
 														{
-															success_flag = true;
-														}
-												}
+															if (AddFundingInformation (grassroots_data_p, brapi_response_p))
+																{
+																	if (AddLeadPerson (grassroots_data_p, brapi_response_p))
+																		{
+																		if (AddObjective (grassroots_data_p, brapi_response_p))
+																			{
+																				if (AddProgrammeDbId (grassroots_data_p, brapi_response_p))
+																					{
+																						if (AddProgrammeName (grassroots_data_p, brapi_response_p))
+																							{
+																								if (AddProgrammeType (grassroots_data_p, brapi_response_p))
+																									{
+																										return brapi_response_p;
+																									}		/* if (AddProgrammeType (grassroots_data_p, brapi_response_p)) */
 
-											FreeBSONOidString (id_s);
-										}
-								}
-						}
+																							}		/* if (AddProgrammeName (grassroots_data_p, brapi_response_p)) */
 
-					if (!success_flag)
-						{
-							json_decref (brapi_response_p);
-							brapi_response_p = NULL;
-						}
-				}		/* if (brapi_response_p) */
+																					}		/* if (AddProgrammeDbId (grassroots_data_p, brapi_response_p)) */
+
+																			}		/* if (AddObjective (grassroots_data_p, brapi_response_p)) */
+
+																	}		/* if (AddLeadPerson (grassroots_data_p, brapi_response_p)) */
+
+															}		/* if (AddFundingInformation (grassroots_data_p, brapi_response_p)) */
+
+													}		/* if (AddExternalReferences (grassroots_data_p, brapi_response_p)) */
+
+											}		/* if (AddDocumentationURL (grassroots_data_p, brapi_response_p)) */
+
+									}		/* if (AddCommonCropName (grassroots_data_p, brapi_response_p)) */
+
+							}		/* if (AddAdditionalInfo (grassroots_data_p, brapi_response_p)) */
+
+					}		/* if (AddAbbreviation (grassroots_data_p, brapi_response_p)) */
+
+				json_decref (brapi_response_p);
+			}		/* if (brapi_response_p) */
 
 		}		/* if (grassroots_data_p) */
 
-	return brapi_response_p;
+	return NULL;
 }
 
 
-static bool SetTrialStudiesData (const json_t *grassroots_data_p, json_t *brapi_response_p)
+
+
+static bool AddActive (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
 {
 	bool success_flag = false;
 
-	/*
-	   GRASSOOTS
-	   ---------
-	   "studies": [
-    {
-      "so:name": "DFW Field Phenotyping Facility - Wheat",
-      "min_ph": 0,
-      "max_ph": 0,
-      "study_design": "Randomized placement of lines within the field with a duplication of as many lines as possible (subject to seed availability). A control line (potentially, WT) will be placed systematically (approx every 9th line) throughout the field to correct for likely spatial heterogeneity.  Note, some consideration of legacy effect (due to to differing previous crops) will be needed in the placement of controls.",
-      "phenotype_gathering_notes": "Sponsor to take in-season measurements",
-      "address": {
-        "_id": {
-          "$oid": "5d67a6e824ce205d7f6bbc52"
-        },
-        "order": 0,
-        "name": "Great Field 1/2 Phenotyping Area",
-        "address": {
-          "Address": {
-            "@type": "PostalAddress",
-            "name": "Great Field 1/2 Phenotyping Area",
-            "addressLocality": "St Albans",
-            "addressRegion": "Hertfordshire",
-            "addressCountry": "UK",
-            "postalCode": "AL5 2GT"
-          },
-          "location": {
-            "centre": {
-              "@type": "so:GeoCoordinates",
-              "latitude": 51.806477999999998,
-              "longitude": -0.36156500000000003
-            }
-          }
-        },
-        "@type": "Grassroots:Location"
-      },
-      "parent_field_trial": {
-        "_id": {
-          "$oid": "5d5ac41b24ce20420b233228"
-        },
-        "so:name": "Awaiting project code allocation"
-      },
-      "_id": {
-        "$oid": "5dd80098de68e75a927a826e"
-      },
-      "number_of_plots": 0,
-      "@type": "Grassroots:Study"
-    },
-
-
-
-		 BRAPI
-	   -----
-		 "studies": [
+	if (SetJSONNull (brapi_trial_p, "active"))
 		{
-			"locationDbId": "1",
-			"locationName": "Location 1",
-			"studyDbId": "1001",
-			"studyName": "Study 1"
-		},
-		{
-			"locationDbId": "1",
-			"locationName": "Location 1",
-			"studyDbId": "1002",
-			"studyName": "Study 2"
-		}
-	 */
-
-	const json_t *grassroots_studies_p = json_object_get (grassroots_data_p, FT_STUDIES_S);
-
-	if (grassroots_studies_p)
-		{
-			json_t *brapi_studies_p = json_array ();
-
-			if (brapi_studies_p)
-				{
-					const size_t num_studies = json_array_size (grassroots_studies_p);
-					size_t i;
-
-					for (i = 0; i < num_studies; ++ i)
-						{
-							const json_t *grassroots_study_p = json_array_get (grassroots_studies_p, i);
-
-							if (!ConvertGrassrootsStudy (grassroots_study_p, brapi_studies_p))
-								{
-									/* force exit from loop */
-									i = num_studies;
-								}
-						}
-
-
-					if (num_studies == json_array_size (brapi_studies_p))
-						{
-							if (json_object_set_new (brapi_response_p, "studies", brapi_studies_p) == 0)
-								{
-									success_flag = true;
-								}
-						}
-				}
-
-
-
-		}		/* if (grassroots_studies_p) */
-	else
-		{
-			/* no studies to add */
-
 			success_flag = true;
 		}
-
 
 	return success_flag;
 }
 
 
-static bool ConvertGrassrootsStudy (const json_t *grassroots_study_p, json_t *brapi_studies_p)
+static bool AddAdditionalInfo (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
 {
 	bool success_flag = false;
-	json_t *brapi_study_p = json_object ();
 
-	if (brapi_study_p)
+	if (SetJSONNull (brapi_trial_p, "additionalInfo"))
 		{
-			if (CopyJSONStringValue (grassroots_study_p, "so:name", brapi_study_p, "studyName"))
-				{
-					bson_oid_t id;
+			success_flag = true;
+		}
 
-					if (GetMongoIdFromJSON (grassroots_study_p, &id))
+	return success_flag;
+}
+
+
+static bool AddCommonCropName (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_trial_p, "commonCropName"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddContacts (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_trial_p, "contacts"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+
+static bool AddDatasetAuthorships (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_trial_p, "datasetAuthorships"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+
+}
+
+static bool AddDocumentationURL (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_trial_p, "documentationURL"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddExternalReferences (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_trial_p, "externalReferences"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddEndDate (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_trial_p, "endDate"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddProgrammeDbId (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+
+}
+
+static bool AddProgrammeName (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+
+}
+
+
+static bool AddPublications (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_trial_p, "publications"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddStartDate (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_trial_p, "startDate"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddTrialDbId (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	bson_oid_t id;
+
+	if (GetMongoIdFromJSON (grassroots_trial_p, &id))
+		{
+			char *id_s = GetBSONOidAsString (&id);
+
+			if (id_s)
+				{
+					if (SetJSONString (brapi_trial_p, "trialDbId", id_s))
 						{
-							char *id_s = GetBSONOidAsString (&id);
-
-							if (id_s)
-								{
-									if (SetJSONString (brapi_study_p, "studyDbId", id_s))
-										{
-											if (SetStudyLocationData (grassroots_study_p, brapi_study_p))
-												{
-													if (json_array_append_new (brapi_studies_p, brapi_study_p) == 0)
-														{
-															success_flag = true;
-														}
-												}
-										}
-
-									FreeBSONOidString (id_s);
-								}
+							success_flag = true;
 						}
-				}
 
-			if (!success_flag)
-				{
-					json_decref (brapi_study_p);
+					FreeBSONOidString (id_s);
 				}
+		}
 
-		}		/* if (brapi_study_p) */
+	return success_flag;
+}
+
+
+static bool AddTrialDescription (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_trial_p, "trialDescription"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddTrialName (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
+
+	if (CopyJSONStringValue (grassroots_trial_p, FT_NAME_S, brapi_trial_p, "trialName"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+
+}
+
+static bool AddTrialPUI (const json_t *grassroots_trial_p, json_t *brapi_trial_p)
+{
+	bool success_flag = false;
 
 	return success_flag;
 }

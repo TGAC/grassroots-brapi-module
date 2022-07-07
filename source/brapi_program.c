@@ -110,6 +110,27 @@ APIStatus GetProgrammeByID (request_rec *req_p, const char *api_call_s, apr_tabl
 }
 
 
+bool AddProgrammeDetails (const json_t *grassroots_data_p, json_t *brapi_response_p)
+{
+	bool success_flag = false;
+
+	if (AddProgrammeDbId (grassroots_data_p, brapi_response_p))
+		{
+			if (AddProgrammeName (grassroots_data_p, brapi_response_p))
+				{
+					if (AddProgrammeType (grassroots_data_p, brapi_response_p))
+						{
+							success_flag = true;
+						}		/* if (AddProgrammeType (grassroots_data_p, brapi_response_p)) */
+
+				}		/* if (AddProgrammeName (grassroots_data_p, brapi_response_p)) */
+
+		}		/* if (AddProgrammeDbId (grassroots_data_p, brapi_response_p)) */
+
+	return success_flag;
+}
+
+
 static APIStatus DoProgrammesSearch (const char *id_s, request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
 {
 	APIStatus res = AS_FAILED;
