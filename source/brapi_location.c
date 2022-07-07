@@ -46,10 +46,10 @@
 static bool SetValidString (json_t *json_p, const char *key_s, const char *value_s);
 
 
-static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p);
+static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p, request_rec *req_p, ModBrapiConfig *config_p);
 
 
-APIStatus GetAllLocations (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+APIStatus GetAllLocations (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p)
 {
 	APIStatus res = AS_IGNORED;
 	const char *signature_s = "locations";
@@ -80,7 +80,7 @@ APIStatus GetAllLocations (request_rec *req_p, const char *api_call_s, apr_table
 
 
 
-APIStatus GetLocationByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+APIStatus GetLocationByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p)
 {
 	int res = 0;
 
@@ -191,7 +191,7 @@ locationType 	string 	The type of location this represents (ex. Breeding Locatio
 longitude 	number 	the longitude of this location
  */
 
-static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p)
+static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p, request_rec *req_p, ModBrapiConfig *config_p)
 {
 	const json_t *grassroots_data_p = json_object_get (grassroots_json_p, RESOURCE_DATA_S);
 

@@ -57,7 +57,13 @@ typedef enum
 typedef struct
 {
 	/** The URL to the Grassroots installation */
-	const char *mbc_grassroots_url_s;
+	const char *mbc_grassroots_server_url_s;
+
+	const char *mbc_grassroots_frontend_url_s;
+
+	const char *mbc_grassroots_frontend_studies_path_s;
+
+	const char *mbc_grassroots_frontend_trials_path_s;
 
 } ModBrapiConfig;
 
@@ -72,7 +78,7 @@ json_t *GetGrassrootsRequest (ParameterSet *params_p);
 json_t *CreateResponseJSONForResult (json_t *payload_array_p, const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages);
 
 
-APIStatus DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*convert_grassroots_to_brapi_fn) (const json_t *grassroots_result_p));
+APIStatus DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*convert_grassroots_to_brapi_fn) (const json_t *grassroots_result_p, request_rec *req_p, ModBrapiConfig *config_p));
 
 
 char *GetObjectIdString (const json_t * const grassroots_json_p);

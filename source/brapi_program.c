@@ -38,7 +38,7 @@
 static APIStatus DoProgrammesSearch (const char *id_s, request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
 
 
-static json_t *ConvertGrassrootsProgrammeToBrapi (const json_t *grassroots_json_p);
+static json_t *ConvertGrassrootsProgrammeToBrapi (const json_t *grassroots_json_p, request_rec *req_p, ModBrapiConfig *config_p);
 
 static bool AddAbbreviation (const json_t *grassroots_programme_p, json_t *brapi_programme_p);
 
@@ -71,7 +71,7 @@ static bool AddProgrammeType (const json_t *grassroots_programme_p, json_t *brap
 
 
 
-APIStatus GetAllProgrammes (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+APIStatus GetAllProgrammes (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p)
 {
 	APIStatus res = AS_IGNORED;
 	const char *signature_s = "programs";
@@ -85,7 +85,7 @@ APIStatus GetAllProgrammes (request_rec *req_p, const char *api_call_s, apr_tabl
 
 }
 
-APIStatus GetProgrammeByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p)
+APIStatus GetProgrammeByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p)
 {
 	APIStatus res = AS_IGNORED;
 	const char *signature_s = "programs/";
@@ -172,7 +172,7 @@ static APIStatus DoProgrammesSearch (const char *id_s, request_rec *req_p, const
 }
 
 
-static json_t *ConvertGrassrootsProgrammeToBrapi (const json_t *grassroots_json_p)
+static json_t *ConvertGrassrootsProgrammeToBrapi (const json_t *grassroots_json_p, request_rec *req_p, ModBrapiConfig *config_p)
 {
 	json_t *brapi_response_p = NULL;
 	const json_t *grassroots_data_p = json_object_get (grassroots_json_p, RESOURCE_DATA_S);

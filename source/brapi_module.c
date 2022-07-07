@@ -62,7 +62,7 @@
 #include "measured_variable_jobs.h"
 
 
-typedef APIStatus (*process_req_fn) (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+typedef APIStatus (*process_req_fn) (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p);
 
 
 /*
@@ -89,7 +89,13 @@ static void *CreateGrassrootsBrapiDirectoryConfig (apr_pool_t *pool_p, char *con
 static ModBrapiConfig *CreateConfig (apr_pool_t *pool_p, server_rec *server_p);
 
 
-static const char *SetGrassrootsURL (cmd_parms *cmd_p, void *cfg_p, const char *arg_s);
+static const char *SetGrassrootsServerURL (cmd_parms *cmd_p, void *cfg_p, const char *arg_s);
+
+static const char *SetGrassrootsFrontEndURL (cmd_parms *cmd_p, void *cfg_p, const char *arg_s);
+
+static const char *SetGrassrootsFrontEndStudiesPath (cmd_parms *cmd_p, void *cfg_p, const char *arg_s);
+
+static const char *SetGrassrootsFrontEndTrialsPath (cmd_parms *cmd_p, void *cfg_p, const char *arg_s);
 
 
 static json_t *CreateMetadataResponse (const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages);
@@ -101,7 +107,11 @@ static json_t *CreateMetadataResponse (const size_t current_page, const size_t p
 
 static const command_rec s_grassroots_brapi_directives [] =
 {
-	AP_INIT_TAKE1 ("GrassrootsURL", SetGrassrootsURL, NULL, ACCESS_CONF, "The url for the Grassroots controller to call"),
+	AP_INIT_TAKE1 ("GrassrootsServerURL", SetGrassrootsServerURL, NULL, ACCESS_CONF, "The url for the Grassroots controller to call"),
+	AP_INIT_TAKE1 ("GrassrootsFrontEndURL", SetGrassrootsFrontEndURL, NULL, ACCESS_CONF, "The url for the Grassroots front end that users access"),
+	AP_INIT_TAKE1 ("GrassrootsFrontEndStudiesPath", SetGrassrootsFrontEndStudiesPath, NULL, ACCESS_CONF, "The path for accessing studies on the front end"),
+	AP_INIT_TAKE1 ("GrassrootsFrontEndTrialsPath", SetGrassrootsFrontEndTrialsPath, NULL, ACCESS_CONF, "The path for accessing trials on the front end"),
+
 	{ NULL }
 };
 
@@ -235,10 +245,13 @@ static int BrapiHandler (request_rec *req_p)
 		{
 			if (req_p -> method_number == M_GET)
 				{
+					ModBrapiConfig *config_p = ap_get_module_config (req_p -> per_dir_config, &grassroots_brapi_module);
+
 					char *api_call_s = strstr (req_p -> uri, S_BRAPI_API_S);
 
 					if (api_call_s)
 						{
+							bool loop_flag = true;
 							APIStatus success = AS_IGNORED;
 							apr_table_t *params_p = NULL;
 							process_req_fn brapi_functions [] =
@@ -259,24 +272,29 @@ static int BrapiHandler (request_rec *req_p)
 							ap_args_to_table (req_p, &params_p);
 
 
-							while ((current_brapi_fn_p != NULL) && (success == AS_IGNORED))
+							while (loop_flag)
 								{
-									success = (*current_brapi_fn_p) (req_p, api_call_s, params_p);
+									success = (*current_brapi_fn_p) (req_p, api_call_s, params_p, config_p);
 
 									switch (success)
 										{
 											case AS_IGNORED:
 												++ current_brapi_fn_p;
+
+												if (*current_brapi_fn_p == NULL)
+													{
+														loop_flag = false;
+													}
 												break;
 
 											case AS_SUCCEEDED:
 												res = OK;
-												current_brapi_fn_p = NULL;
+												loop_flag = false;
 												break;
 
 											case AS_FAILED:
 												res = HTTP_BAD_REQUEST;
-												current_brapi_fn_p = NULL;
+												loop_flag = false;
 												break;
 
 										}
@@ -292,7 +310,7 @@ static int BrapiHandler (request_rec *req_p)
 }
 
 
-APIStatus DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t * (*convert_grassroots_to_brapi_fn) (const json_t *grassroots_result_p))
+APIStatus DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t *(*convert_grassroots_to_brapi_fn) (const json_t *grassroots_result_p, request_rec *req_p, ModBrapiConfig *config_p))
 {
 	APIStatus res = AS_FAILED;
 	json_t *grassroots_request_p = GetGrassrootsRequest (params_p);
@@ -300,7 +318,7 @@ APIStatus DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t *
 	if (grassroots_request_p)
 		{
 			ModBrapiConfig *config_p = ap_get_module_config (req_p -> per_dir_config, &grassroots_brapi_module);
-			Connection *connection_p = AllocateWebServerConnection (config_p -> mbc_grassroots_url_s, CM_MEMORY);
+			Connection *connection_p = AllocateWebServerConnection (config_p -> mbc_grassroots_server_url_s, CM_MEMORY);
 
 			if (connection_p)
 				{
@@ -367,7 +385,7 @@ APIStatus DoGrassrootsCall (request_rec *req_p, ParameterSet *params_p, json_t *
 																					for (i = 0; i < num_results; ++ i)
 																						{
 																							const json_t *grassroots_result_p = json_array_get (job_results_p, i);
-																							json_t *brapi_result_p = convert_grassroots_to_brapi_fn (grassroots_result_p);
+																							json_t *brapi_result_p = convert_grassroots_to_brapi_fn (grassroots_result_p, req_p, config_p);
 
 																							if (brapi_result_p)
 																								{
@@ -454,11 +472,41 @@ static void RegisterHooks (apr_pool_t *pool_p)
 }
 
 
-static const char *SetGrassrootsURL (cmd_parms *cmd_p, void *cfg_p, const char *arg_s)
+static const char *SetGrassrootsServerURL (cmd_parms *cmd_p, void *cfg_p, const char *arg_s)
 {
 	ModBrapiConfig *config_p = (ModBrapiConfig *) cfg_p;
 
-	config_p -> mbc_grassroots_url_s = arg_s;
+	config_p -> mbc_grassroots_server_url_s = arg_s;
+
+	return NULL;
+}
+
+
+static const char *SetGrassrootsFrontEndURL (cmd_parms *cmd_p, void *cfg_p, const char *arg_s)
+{
+	ModBrapiConfig *config_p = (ModBrapiConfig *) cfg_p;
+
+	config_p -> mbc_grassroots_frontend_url_s = arg_s;
+
+	return NULL;
+}
+
+
+static const char *SetGrassrootsFrontEndStudiesPath (cmd_parms *cmd_p, void *cfg_p, const char *arg_s)
+{
+	ModBrapiConfig *config_p = (ModBrapiConfig *) cfg_p;
+
+	config_p -> mbc_grassroots_frontend_studies_path_s = arg_s;
+
+	return NULL;
+}
+
+
+static const char *SetGrassrootsFrontEndTrialsPath (cmd_parms *cmd_p, void *cfg_p, const char *arg_s)
+{
+	ModBrapiConfig *config_p = (ModBrapiConfig *) cfg_p;
+
+	config_p -> mbc_grassroots_frontend_trials_path_s = arg_s;
 
 	return NULL;
 }
@@ -469,9 +517,24 @@ static void *MergeGrassrootsBrapiDirectoryConfig (apr_pool_t *pool_p, void *base
 	ModBrapiConfig *base_brapi_config_p = (ModBrapiConfig *) base_config_p;
 	ModBrapiConfig *new_brapi_config_p = (ModBrapiConfig *) new_config_p;
 
-	if (new_brapi_config_p -> mbc_grassroots_url_s)
+	if (new_brapi_config_p -> mbc_grassroots_server_url_s)
 		{
-			base_brapi_config_p -> mbc_grassroots_url_s = new_brapi_config_p -> mbc_grassroots_url_s;
+			base_brapi_config_p -> mbc_grassroots_server_url_s = new_brapi_config_p -> mbc_grassroots_server_url_s;
+		}
+
+	if (new_brapi_config_p -> mbc_grassroots_frontend_url_s)
+		{
+			base_brapi_config_p -> mbc_grassroots_frontend_url_s = new_brapi_config_p -> mbc_grassroots_frontend_url_s;
+		}
+
+	if (new_brapi_config_p -> mbc_grassroots_frontend_studies_path_s)
+		{
+			base_brapi_config_p -> mbc_grassroots_frontend_studies_path_s = new_brapi_config_p -> mbc_grassroots_frontend_studies_path_s;
+		}
+
+	if (new_brapi_config_p -> mbc_grassroots_frontend_trials_path_s)
+		{
+			base_brapi_config_p -> mbc_grassroots_frontend_trials_path_s = new_brapi_config_p -> mbc_grassroots_frontend_trials_path_s;
 		}
 
 	return base_config_p;
@@ -503,7 +566,10 @@ static ModBrapiConfig *CreateConfig (apr_pool_t *pool_p, server_rec *server_p)
 
 	if (config_p)
 		{
-			config_p -> mbc_grassroots_url_s = NULL;
+			config_p -> mbc_grassroots_server_url_s = NULL;
+			config_p -> mbc_grassroots_frontend_url_s = NULL;
+			config_p -> mbc_grassroots_frontend_studies_path_s = "studies/";
+			config_p -> mbc_grassroots_frontend_trials_path_s = "trials/";
 		}
 
 	return config_p;

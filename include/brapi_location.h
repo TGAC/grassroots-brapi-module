@@ -32,9 +32,9 @@
 #include "typedefs.h"
 
 
-APIStatus GetAllLocations (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+APIStatus GetAllLocations (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p);
 
-APIStatus GetLocationByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+APIStatus GetLocationByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p);
 
 
 bool GetMinimalLocationData (const json_t *grassroots_json_p, char **name_ss, char **db_id_ss);

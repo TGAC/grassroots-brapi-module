@@ -31,9 +31,9 @@
 #include "brapi_module.h"
 
 
-APIStatus GetAllStudies (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+APIStatus GetAllStudies (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p);
 
-APIStatus GetStudyByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+APIStatus GetStudyByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p);
 
 bool SetStudyLocationData (const json_t *grassroots_data_p, json_t *brapi_response_p);
 
