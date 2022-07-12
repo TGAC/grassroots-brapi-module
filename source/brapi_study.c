@@ -66,6 +66,8 @@ static bool AddCommonCropName (const json_t *grassroots_study_p, json_t *brapi_s
 
 static bool AddContacts (const json_t *grassroots_study_p, json_t *brapi_study_p);
 
+static bool AddCulturalPractices (const json_t *grassroots_study_p, json_t *brapi_study_p);
+
 static bool AddDataLinks (const json_t *grassroots_study_p, json_t *brapi_study_p);
 
 static bool AddDocumentationURL (const json_t *grassroots_study_p, json_t *brapi_study_p);
@@ -222,98 +224,102 @@ static json_t *ConvertGrassrootsStudyToBrapi (const json_t *grassroots_json_p, r
 										{
 											if (AddContacts (grassroots_data_p, brapi_response_p))
 												{
-													if (AddDataLinks (grassroots_data_p, brapi_response_p))
+													if (AddCulturalPractices (grassroots_data_p, brapi_response_p))
 														{
-															if (AddDocumentationURL (grassroots_data_p, brapi_response_p))
+															if (AddDataLinks (grassroots_data_p, brapi_response_p))
 																{
-																	if (AddEndDate (grassroots_data_p, brapi_response_p))
+																	if (AddDocumentationURL (grassroots_data_p, brapi_response_p))
 																		{
-																			if (AddEnvironmentParameters (grassroots_data_p, brapi_response_p))
+																			if (AddEndDate (grassroots_data_p, brapi_response_p))
 																				{
-																					if (AddExperimentalDesign (grassroots_data_p, brapi_response_p))
+																					if (AddEnvironmentParameters (grassroots_data_p, brapi_response_p))
 																						{
-																							if (AddExternalReferences (grassroots_data_p, brapi_response_p))
+																							if (AddExperimentalDesign (grassroots_data_p, brapi_response_p))
 																								{
-																									if (AddGrowthFacility (grassroots_data_p, brapi_response_p))
+																									if (AddExternalReferences (grassroots_data_p, brapi_response_p))
 																										{
-																											if (AddLastUpdate (grassroots_data_p, brapi_response_p))
+																											if (AddGrowthFacility (grassroots_data_p, brapi_response_p))
 																												{
-																													if (AddLicense (grassroots_data_p, brapi_response_p))
+																													if (AddLastUpdate (grassroots_data_p, brapi_response_p))
 																														{
-																															if (AddLocationDetails (grassroots_data_p, brapi_response_p))
+																															if (AddLicense (grassroots_data_p, brapi_response_p))
 																																{
-																																	if (AddObservationLevels (grassroots_data_p, brapi_response_p))
+																																	if (AddLocationDetails (grassroots_data_p, brapi_response_p))
 																																		{
-																																			char *id_s = GetAndAddStudyDbId (grassroots_data_p, brapi_response_p);
-
-																																			if (id_s)
+																																			if (AddObservationLevels (grassroots_data_p, brapi_response_p))
 																																				{
-																																					if (AddObservationVariableDbIds (grassroots_data_p, brapi_response_p))
+																																					char *id_s = GetAndAddStudyDbId (grassroots_data_p, brapi_response_p);
+
+																																					if (id_s)
 																																						{
-																																							if (AddSeasons (grassroots_data_p, brapi_response_p))
+																																							if (AddObservationVariableDbIds (grassroots_data_p, brapi_response_p))
 																																								{
-																																									if (AddStartDate (grassroots_data_p, brapi_response_p))
+																																									if (AddSeasons (grassroots_data_p, brapi_response_p))
 																																										{
-																																											if (AddStudyCode (grassroots_data_p, brapi_response_p))
+																																											if (AddStartDate (grassroots_data_p, brapi_response_p))
 																																												{
-																																													if (AddStudyDbId (grassroots_data_p, brapi_response_p))
+																																													if (AddStudyCode (grassroots_data_p, brapi_response_p))
 																																														{
-																																															if (AddStudyDescription (grassroots_data_p, brapi_response_p))
+																																															if (AddStudyDbId (grassroots_data_p, brapi_response_p))
 																																																{
-																																																	if (AddStudyName (grassroots_data_p, brapi_response_p))
+																																																	if (AddStudyDescription (grassroots_data_p, brapi_response_p))
 																																																		{
-																																																			if (AddStudyPUI (grassroots_data_p, brapi_response_p, id_s, req_p, config_p))
+																																																			if (AddStudyName (grassroots_data_p, brapi_response_p))
 																																																				{
-																																																					if (AddStudyType (grassroots_data_p, brapi_response_p))
+																																																					if (AddStudyPUI (grassroots_data_p, brapi_response_p, id_s, req_p, config_p))
 																																																						{
-																																																							if (AddTrialDetails (grassroots_data_p, brapi_response_p))
+																																																							if (AddStudyType (grassroots_data_p, brapi_response_p))
 																																																								{
-																																																									return brapi_response_p;
+																																																									if (AddTrialDetails (grassroots_data_p, brapi_response_p))
+																																																										{
+																																																											return brapi_response_p;
 
-																																																								}		/* if (AddTrialDetails (grassroots_data_p, brapi_response_p)) */
+																																																										}		/* if (AddTrialDetails (grassroots_data_p, brapi_response_p)) */
 
-																																																						}		/* if (AddStudyType (grassroots_data_p, brapi_response_p)) */
+																																																								}		/* if (AddStudyType (grassroots_data_p, brapi_response_p)) */
 
-																																																				}		/* if (AddStudyPUI (grassroots_data_p, brapi_response_p)) */
+																																																						}		/* if (AddStudyPUI (grassroots_data_p, brapi_response_p)) */
 
-																																																		}		/* if (AddStudyName (grassroots_data_p, brapi_response_p)) */
+																																																				}		/* if (AddStudyName (grassroots_data_p, brapi_response_p)) */
 
-																																																}		/* if (AddStudyDescription (grassroots_data_p, brapi_response_p)) */
+																																																		}		/* if (AddStudyDescription (grassroots_data_p, brapi_response_p)) */
 
-																																														}		/* if (AddStudyDbId (grassroots_data_p, brapi_response_p)) */
+																																																}		/* if (AddStudyDbId (grassroots_data_p, brapi_response_p)) */
 
-																																												}		/* if (AddStudyCode (grassroots_data_p, brapi_response_p)) */
+																																														}		/* if (AddStudyCode (grassroots_data_p, brapi_response_p)) */
 
-																																										}		/* if (AddStartDate (grassroots_data_p, brapi_response_p)) */
+																																												}		/* if (AddStartDate (grassroots_data_p, brapi_response_p)) */
 
-																																								}		/* if (AddSeasons (grassroots_data_p, brapi_response_p)) */
+																																										}		/* if (AddSeasons (grassroots_data_p, brapi_response_p)) */
 
-																																						}		/* if (AddObservationVariableDbIds (grassroots_data_p, brapi_response_p)) */
+																																								}		/* if (AddObservationVariableDbIds (grassroots_data_p, brapi_response_p)) */
 
-																																					FreeBSONOidString (id_s);
-																																				}		/* if (id_s) */
+																																							FreeBSONOidString (id_s);
+																																						}		/* if (id_s) */
 
-																																		}		/* if (AddObservationLevels (grassroots_data_p, brapi_response_p)) */
+																																				}		/* if (AddObservationLevels (grassroots_data_p, brapi_response_p)) */
 
-																																}		/* if (AddLocationDetails (grassroots_data_p, brapi_response_p)) */
+																																		}		/* if (AddLocationDetails (grassroots_data_p, brapi_response_p)) */
 
-																														}		/* if (AddLicense (grassroots_data_p, brapi_response_p)) */
+																																}		/* if (AddLicense (grassroots_data_p, brapi_response_p)) */
 
-																												}		/* if (AddLastUpdate (grassroots_data_p, brapi_response_p)) */
+																														}		/* if (AddLastUpdate (grassroots_data_p, brapi_response_p)) */
 
-																										}		/* if (AddGrowthFacility (grassroots_data_p, brapi_response_p)) */
+																												}		/* if (AddGrowthFacility (grassroots_data_p, brapi_response_p)) */
 
-																								}		/* if (AddExternalReferences (grassroots_data_p, brapi_response_p)) */
+																										}		/* if (AddExternalReferences (grassroots_data_p, brapi_response_p)) */
 
-																						}		/* if (AddExperimentalDesign (grassroots_data_p, brapi_response_p)) */
+																								}		/* if (AddExperimentalDesign (grassroots_data_p, brapi_response_p)) */
 
-																				}		/* if (AddEnvironmentParameters (grassroots_data_p, brapi_response_p)) */
+																						}		/* if (AddEnvironmentParameters (grassroots_data_p, brapi_response_p)) */
 
-																		}		/* if (AddEndDate (grassroots_data_p, brapi_response_p)) */
+																				}		/* if (AddEndDate (grassroots_data_p, brapi_response_p)) */
 
-																}		/* if (AddDocumentationURL (grassroots_data_p, brapi_response_p)) */
+																		}		/* if (AddDocumentationURL (grassroots_data_p, brapi_response_p)) */
 
-														}		/* if (AddDataLinks (grassroots_data_p, brapi_response_p)) */
+																}		/* if (AddDataLinks (grassroots_data_p, brapi_response_p)) */
+
+														}		/* if (AddCulturalPractices (grassroots_data_p, brapi_response_p)) */
 
 												}		/* if (AddContacts (grassroots_data_p, brapi_response_p)) */
 
@@ -389,10 +395,15 @@ static bool AddParentTrialData (const json_t *grassroots_data_p, json_t *brapi_r
 static bool AddAdditionalInfo (const json_t *grassroots_data_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "additionalInfo";
 
-	if (SetJSONNull (brapi_study_p, "additionalInfo"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
+		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
 		}
 
 	return success_flag;
@@ -498,18 +509,42 @@ static bool AddContacts (const json_t *grassroots_study_p, json_t *brapi_study_p
 }
 
 
+static bool AddCulturalPractices (const json_t *grassroots_study_p, json_t *brapi_study_p)
+{
+	bool success_flag = false;
+	const char * const key_s = "culturalPractices";
+
+	if (SetJSONNull (brapi_study_p, key_s))
+		{
+			success_flag = true;
+		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
+		}
+
+	return success_flag;
+}
+
+
 static bool AddDataLinks (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "dataLinks";
 
-	if (SetJSONNull (brapi_study_p, "dataLinks"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
+		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
 		}
 
 	return success_flag;
 
 }
+
 
 static bool AddDocumentationURL (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
@@ -533,11 +568,17 @@ static bool AddEndDate (const json_t *grassroots_study_p, json_t *brapi_study_p)
 static bool AddEnvironmentParameters (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "environmentParameters";
 
-	if (SetJSONNull (brapi_study_p, "environmentParameters"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
 		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
+		}
+
 
 	return success_flag;
 }
@@ -559,11 +600,17 @@ static bool AddExperimentalDesign (const json_t *grassroots_study_p, json_t *bra
 static bool AddExternalReferences (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "externalReferences";
 
-	if (SetJSONNull (brapi_study_p, "externalReferences"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
 		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
+		}
+
 
 	return success_flag;
 }
@@ -572,10 +619,15 @@ static bool AddExternalReferences (const json_t *grassroots_study_p, json_t *bra
 static bool AddGrowthFacility (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "growthFacility";
 
-	if (SetJSONNull (brapi_study_p, "growthFacility"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
+		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
 		}
 
 	return success_flag;
@@ -585,11 +637,17 @@ static bool AddGrowthFacility (const json_t *grassroots_study_p, json_t *brapi_s
 static bool AddLastUpdate (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "lastUpdate";
 
-	if (SetJSONNull (brapi_study_p, "lastUpdate"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
 		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
+		}
+
 
 	return success_flag;
 }
@@ -610,8 +668,6 @@ static bool AddLocationDetails (const json_t *grassroots_study_p, json_t *brapi_
 	bool success_flag = false;
 	const char * const ID_KEY_S = "locationDbId";
 	const char * const NAME_KEY_S = "locationName";
-	const char *name_s = NULL;
-	char *id_s = NULL;
 	const json_t *address_p = json_object_get (grassroots_study_p, ST_LOCATION_S);
 
 	if (address_p)
@@ -620,7 +676,7 @@ static bool AddLocationDetails (const json_t *grassroots_study_p, json_t *brapi_
 
 			if (GetMongoIdFromJSON (address_p, &id))
 				{
-					id_s = GetBSONOidAsString (&id);
+					char *id_s = GetBSONOidAsString (&id);
 
 					if (id_s)
 						{
@@ -655,11 +711,17 @@ static bool AddLocationDetails (const json_t *grassroots_study_p, json_t *brapi_
 static bool AddObservationLevels (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "observationLevels";
 
-	if (SetJSONNull (brapi_study_p, "observationLevels"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
 		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
+		}
+
 
 	return success_flag;
 }
@@ -691,11 +753,17 @@ static char *GetAndAddStudyDbId (const json_t *grassroots_study_p, json_t *brapi
 static bool AddObservationVariableDbIds (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "observationVariableDbIds";
 
-	if (SetJSONNull (brapi_study_p, "observationVariableDbIds"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
 		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
+		}
+
 
 	return success_flag;
 }
@@ -704,10 +772,15 @@ static bool AddObservationVariableDbIds (const json_t *grassroots_study_p, json_
 static bool AddSeasons(const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "seasons";
 
-	if (SetJSONNull (brapi_study_p, "seasons"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
+		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
 		}
 
 	return success_flag;
@@ -723,10 +796,15 @@ static bool AddStartDate (const json_t *grassroots_study_p, json_t *brapi_study_
 static bool AddStudyCode (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "studyCode";
 
-	if (SetJSONNull (brapi_study_p, "studyCode"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
+		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
 		}
 
 	return success_flag;
@@ -815,11 +893,17 @@ static bool AddStudyPUI (const json_t *grassroots_study_p, json_t *brapi_study_p
 static bool AddStudyType (const json_t *grassroots_study_p, json_t *brapi_study_p)
 {
 	bool success_flag = false;
+	const char * const key_s = "studyType";
 
-	if (SetJSONNull (brapi_study_p, "studyType"))
+	if (SetJSONNull (brapi_study_p, key_s))
 		{
 			success_flag = true;
 		}
+	else
+		{
+			PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_study_p, "Failed to add \"%s\": null", key_s);
+		}
+
 
 	return success_flag;
 }
@@ -912,7 +996,7 @@ static bool AddPerson (const json_t *grassroots_study_p, const char * const gras
 																{
 																	if (SetJSONNull (brapi_person_p, "orcid"))
 																		{
-																			if (SetJSONNull (brapi_person_p, brapi_type_s))
+																			if (SetJSONString (brapi_person_p, "type", brapi_type_s))
 																				{
 																					if (json_array_append_new (brapi_contacts_p, brapi_person_p) == 0)
 																						{
@@ -970,4 +1054,5 @@ static bool AddDate (const json_t *grassroots_study_p, const char * const grassr
 
 	return success_flag;
 }
+
 

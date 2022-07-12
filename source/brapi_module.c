@@ -645,6 +645,10 @@ bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *de
 				{
 					success_flag = true;
 				}
+			else
+				{
+					PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, dest_p, "Failed to add \"%s\": \"%s\"", dest_key_s, value_s);
+				}
 		}
 	else
 		{
@@ -652,13 +656,14 @@ bool CopyJSONStringValue (const json_t *src_p, const char *src_key_s, json_t *de
 				{
 					success_flag = true;
 				}
+			else
+				{
+					PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, dest_p, "Failed to add \"%s\": null", dest_key_s);
+				}
 		}
 
 	return success_flag;
 }
-
-
-
 
 
 static json_t *CreateMetadataResponse (const size_t current_page, const size_t page_size, const size_t total_count, const size_t total_pages)
