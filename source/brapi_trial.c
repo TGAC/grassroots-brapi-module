@@ -498,6 +498,7 @@ static bool AddTrialPUI (const json_t *grassroots_trial_p, json_t *brapi_trial_p
 {
 	bool success_flag = false;
 	char *url_s = NULL;
+	const char * const key_s = "trialPUI";
 
 	if ((config_p -> mbc_grassroots_frontend_url_s) && (config_p -> mbc_grassroots_frontend_trials_path_s))
 		{
@@ -506,14 +507,14 @@ static bool AddTrialPUI (const json_t *grassroots_trial_p, json_t *brapi_trial_p
 
 	if (url_s)
 		{
-			if (SetJSONString (brapi_trial_p, "trialPUI", url_s))
+			if (SetJSONString (brapi_trial_p, key_s, url_s))
 				{
 					success_flag = true;
 				}
 		}
 	else
 		{
-			if (SetJSONNull (brapi_trial_p, "trialPUI"))
+			if (SetJSONNull (brapi_trial_p, key_s))
 				{
 					success_flag = true;
 				}

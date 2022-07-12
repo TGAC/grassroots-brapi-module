@@ -45,8 +45,7 @@
  * Ensure field trial named constants are defined
  */
 #define	ALLOCATE_CROP_TAGS (1)
-#define	ALLOCATE_STUDY_TAGS (1)
-#define ALLOCATE_STUDY_JOB_CONSTANTS (1)
+#define ALLOCATE_LOCATION_TAGS (1)
 #define ALLOCATE_LOCATION_JOB_CONSTANTS (1)
 #define ALLOCATE_MEASURED_VARIABLE_CONSTANTS (1)
 
@@ -262,6 +261,8 @@ static int BrapiHandler (request_rec *req_p)
 									GetProgrammeByID,
 									GetAllTrials,
 									GetTrialByID,
+									GetAllStudies,
+									GetStudyByID,
 									NULL
 								};
 							process_req_fn *current_brapi_fn_p = brapi_functions;
