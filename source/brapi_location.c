@@ -651,11 +651,11 @@ static char *GetAndAddLocationDbId (const json_t *grassroots_location_p, json_t 
 
 
 
-static bool AddLocationName (const json_t *parent_programme_p, json_t *brapi_location_p)
+static bool AddLocationName (const json_t *grassroots_location_p, json_t *brapi_location_p)
 {
 	bool success_flag = false;
 
-	if (CopyJSONStringValue (parent_programme_p, PR_NAME_S, brapi_location_p, "locationName"))
+	if (CopyJSONStringValue (grassroots_location_p, LO_NAME_S, brapi_location_p, "locationName"))
 		{
 			success_flag = true;
 		}
