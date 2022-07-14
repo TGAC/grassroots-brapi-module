@@ -45,8 +45,7 @@
  * Ensure field trial named constants are defined
  */
 #define	ALLOCATE_CROP_TAGS (1)
-#define ALLOCATE_LOCATION_TAGS (1)
-#define ALLOCATE_LOCATION_JOB_CONSTANTS (1)
+
 #define ALLOCATE_MEASURED_VARIABLE_CONSTANTS (1)
 
 

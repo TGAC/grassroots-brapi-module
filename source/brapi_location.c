@@ -1,30 +1,34 @@
 /*
-** Copyright 2014-2018 The Earlham Institute
-**
-** Licensed under the Apache License, Version 2.0 (the "License");
-** you may not use this file except in compliance with the License.
-** You may obtain a copy of the License at
-**
-**     http://www.apache.org/licenses/LICENSE-2.0
-**
-** Unless required by applicable law or agreed to in writing, software
-** distributed under the License is distributed on an "AS IS" BASIS,
-** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-** See the License for the specific language governing permissions and
-** limitations under the License.
-*/
+ ** Copyright 2014-2018 The Earlham Institute
+ **
+ ** Licensed under the Apache License, Version 2.0 (the "License");
+ ** you may not use this file except in compliance with the License.
+ ** You may obtain a copy of the License at
+ **
+ **     http://www.apache.org/licenses/LICENSE-2.0
+ **
+ ** Unless required by applicable law or agreed to in writing, software
+ ** distributed under the License is distributed on an "AS IS" BASIS,
+ ** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ ** See the License for the specific language governing permissions and
+ ** limitations under the License.
+ */
 /*
  * brapi_location.c
  *
- *  Created on: 9 Nov 2018
+ *  Created on: 8 Jan 2019
  *      Author: billy
  */
 
 #include "bson.h"
+#include "mongodb_tool.h"
 
-#include "brapi_location.h"
 
-#include "address.h"
+#include "brapi_module.h"
+
+#include "brapi_trial.h"
+#include "brapi_study.h"
+
 #include "schema_keys.h"
 
 #include "parameter_set.h"
@@ -33,20 +37,72 @@
 #include "operation.h"
 #include "json_util.h"
 #include "string_utils.h"
-#include "mongodb_tool.h"
-#include "brapi_module.h"
+#include "time_util.h"
 
-#include "study.h"
+#include "country_codes.h"
+
+
+#define ALLOCATE_COORDINATE_TAGS (1)
+#define ALLOCATE_LOCATION_TAGS (1)
+#include "location.h"
+
+#define ALLOCATE_LOCATION_JOB_CONSTANTS (1)
 #include "location_jobs.h"
+
+#include "programme.h"
 
 #include "boolean_parameter.h"
 #include "string_parameter.h"
 
-
-static bool SetValidString (json_t *json_p, const char *key_s, const char *value_s);
+#include "apr_strings.h"
 
 
 static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p, request_rec *req_p, ModBrapiConfig *config_p);
+
+static APIStatus DoLocationsSearch (const char *id_s, request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p);
+
+static bool AddAbbreviation (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddAdditionalInfo (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddCoordinateDescription (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddCoordinateUncertainty (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddCoordinates (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddCountryDetails (const json_t *address_p, json_t *brapi_location_p);
+
+static bool AddDocumentationURL (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddEnvironmentType(const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddExposure (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddExternalReferences (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddInstituteAddress (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddInstituteName (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static char *GetAndAddLocationDbId (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddLocationName (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddLocationType (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddParentLocationDbId (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddParentLocationName (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddSiteStatus (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddSlope (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddTopography (const json_t *grassroots_location_p, json_t *brapi_location_p);
+
+static bool AddRealToJSONArray (json_t *array_p, const double value);
+
 
 
 APIStatus GetAllLocations (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p)
@@ -58,17 +114,34 @@ APIStatus GetAllLocations (request_rec *req_p, const char *api_call_s, apr_table
 		{
 			ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
 
-			res = -1;
+			res = AS_FAILED;
 
 			if (params_p)
 				{
+					bool success_flag = true;
 					bool value = true;
 
 					if (EasyCreateAndAddBooleanParameterToParameterSet (NULL, params_p, NULL, LOCATION_GET_ALL_LOCATIONS.npt_name_s, NULL, NULL, &value, PL_ALL))
 						{
-							params_p -> ps_current_level = PL_ADVANCED;
-							res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
-						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, LOCATION_GET_ALL_LOCATIONS.npt_type, LOCATION_GET_ALL_LOCATIONS.npt_name_s, NULL, NULL, value, PL_ALL)) */
+							apr_pool_t *pool_p = req_p -> pool;
+							const char *sort_by_s = NULL;
+							const char *sort_order_s = NULL;
+							const char *page_number_s = NULL;
+							const char *page_index_s = NULL;
+							const char *location_id_s = GetParameterValue (req_params_p, "locationDbId", pool_p);
+							const char *active_s = GetParameterValue (req_params_p, "active", pool_p);
+							const char *crop_name_s = GetParameterValue (req_params_p, "commonCropName", pool_p);
+
+							GetSortSearchParameters (req_params_p, &sort_by_s, &sort_order_s, pool_p);
+
+							if (success_flag)
+								{
+									params_p -> ps_current_level = PL_ADVANCED;
+									res = DoGrassrootsCall (req_p, params_p, ConvertGrassrootsLocationToBrapi);
+								}
+
+						}		/* if (EasyCreateAndAddParameterToParameterSet (NULL, params_p, NULL, PT_BOOLEAN, "Search Experimental Areas", NULL, NULL, value, PL_ALL)) */
+
 
 					FreeParameterSet (params_p);
 				}		/* if (params_p) */
@@ -82,7 +155,7 @@ APIStatus GetAllLocations (request_rec *req_p, const char *api_call_s, apr_table
 
 APIStatus GetLocationByID (request_rec *req_p, const char *api_call_s, apr_table_t *req_params_p, ModBrapiConfig *config_p)
 {
-	int res = 0;
+	APIStatus res = AS_IGNORED;
 
 	const char *signature_s = "locations/";
 	size_t l = strlen (signature_s);
@@ -95,7 +168,7 @@ APIStatus GetLocationByID (request_rec *req_p, const char *api_call_s, apr_table
 				{
 					ParameterSet *params_p = AllocateParameterSet (NULL, NULL);
 
-					res = -1;
+					res = AS_FAILED;
 
 					if (params_p)
 						{
@@ -112,203 +185,581 @@ APIStatus GetLocationByID (request_rec *req_p, const char *api_call_s, apr_table
 				}
 			else
 				{
-					res = -1;
+					res = AS_FAILED;
 				}
 		}
-
 
 	return res;
 }
 
 
-bool GetMinimalLocationData (const json_t *grassroots_json_p, char **name_ss, char **db_id_ss)
-{
-	const json_t *address_p = json_object_get (grassroots_json_p, ST_LOCATION_S);
-
-	if (address_p)
-		{
-			bson_oid_t id;
-
-			if (GetMongoIdFromJSON (address_p, &id))
-				{
-					const char *name_s = GetJSONString (address_p, "name");
-
-					if (name_s)
-						{
-							char *id_s = GetBSONOidAsString (&id);
-
-							if (id_s)
-								{
-									char *copied_name_s = EasyCopyToNewString (name_s);
-
-									if (copied_name_s)
-										{
-											*name_ss = copied_name_s;
-											*db_id_ss = id_s;
-
-											return true;
-										}
-
-									FreeBSONOidString (id_s);
-								}
-						}
-				}
-		}
-
-	return false;
-}
-
-
-
-/*
-
-
-Implemented by: Germinate
-
-Get a list of locations.
-
-    The countryCode is as per ISO_3166-1_alpha-3 spec.
-
-    altitude is in meters.
-
-Note: Consider revising to describe polygon lat/lan points and check if adopting http://geojson.org/ is worth doing for v1.
-
-Response Fields
-Field 	Type 	Description
-data 	array[object]
-abbreviation 	string 	An abbreviation which represents this location
-additionalInfo 	object 	Additional arbitrary info
-altitude 	number 	The altitude of this location
-countryCode 	string 	ISO_3166-1_alpha-3 spec
-countryName 	string 	The full name of the country where this location is
-documentationURL 	string (uri) 	A URL to the human readable documentation of this object
-instituteAddress 	string 	The street address of the institute representing this location
-instituteName 	string 	each institute/laboratory can have several experimental field
-latitude 	number 	The latitude of this location
-locationDbId 	string 	string identifier
-locationName 	string 	A human readable name for this location
-locationType 	string 	The type of location this represents (ex. Breeding Location, Storage Location, etc)
-longitude 	number 	the longitude of this location
- */
 
 static json_t *ConvertGrassrootsLocationToBrapi (const json_t *grassroots_json_p, request_rec *req_p, ModBrapiConfig *config_p)
 {
+	json_t *brapi_response_p = NULL;
 	const json_t *grassroots_data_p = json_object_get (grassroots_json_p, RESOURCE_DATA_S);
 
 	if (grassroots_data_p)
 		{
-			const json_t *src_address_p = json_object_get (grassroots_data_p, ST_LOCATION_S);
+			brapi_response_p = json_object ();
 
-			if (src_address_p)
+			if (brapi_response_p)
 				{
-					Address *address_p = GetAddressFromJSON (src_address_p);
-
-					if (address_p)
+					if (AddAbbreviation (grassroots_data_p, brapi_response_p))
 						{
-							json_t *brapi_address_p = json_object ();
-
-							if (brapi_address_p)
+							if (AddAdditionalInfo (grassroots_data_p, brapi_response_p))
 								{
-									if (SetValidString (brapi_address_p, "locationType", "Breeding Location"))
+									const json_t *address_p = json_object_get (grassroots_data_p, LO_ADDRESS_S);
+
+									if (address_p)
 										{
-											if (SetValidString (brapi_address_p, "countryCode", address_p -> ad_country_code_s))
+											if (AddCoordinateDescription (grassroots_data_p, brapi_response_p))
 												{
-													if (SetValidString (brapi_address_p, "countryName", address_p -> ad_country_s))
+													if (AddCoordinateUncertainty (grassroots_data_p, brapi_response_p))
 														{
-															if (SetValidString (brapi_address_p, "locationName", address_p -> ad_name_s))
+															if (AddCoordinates (address_p, brapi_response_p))
 																{
-																	char *address_s = GetAddressAsString (address_p);
-
-																	if (address_s)
+																	if (AddCountryDetails (address_p, brapi_response_p))
 																		{
-																			if (SetValidString (brapi_address_p, "instituteAddress", address_s))
+																			if (AddDocumentationURL (grassroots_data_p, brapi_response_p))
 																				{
-																					bool success_flag = true;
-																					char *id_s = GetObjectIdString (grassroots_data_p);
-
-																					if (id_s)
+																					if (AddEnvironmentType (grassroots_data_p, brapi_response_p))
 																						{
-																							success_flag = SetValidString (brapi_address_p, "locationDbId", id_s);
-																							FreeCopiedString (id_s);
-																						}
-
-																					if (success_flag)
-																						{
-																							if (address_p -> ad_gps_centre_p)
+																							if (AddExposure (grassroots_data_p, brapi_response_p))
 																								{
-																									if (SetJSONReal (brapi_address_p, "latitude", address_p -> ad_gps_centre_p -> co_x))
+																									if (AddExternalReferences (grassroots_data_p, brapi_response_p))
 																										{
-																											if (SetJSONReal (brapi_address_p, "longitude", address_p -> ad_gps_centre_p -> co_y))
+																											if (AddInstituteAddress (grassroots_data_p, brapi_response_p))
 																												{
-																													success_flag = true;
-																												}
-																										}
-																								}
-																							else
-																								{
-																									success_flag = true;
-																								}
+																													if (AddInstituteName (grassroots_data_p, brapi_response_p))
+																														{
+																															char *id_s = GetAndAddLocationDbId (grassroots_data_p, brapi_response_p);
 
-																							if (success_flag)
-																								{
-																									if (address_p -> ad_elevation_p)
-																										{
-																											success_flag = SetJSONReal (brapi_address_p, "altitude", * (address_p -> ad_elevation_p));
-																										}
+																															if (id_s)
+																																{
+																																	if (AddLocationName (grassroots_data_p, brapi_response_p))
+																																		{
+																																			if (AddLocationType (grassroots_data_p, brapi_response_p))
+																																				{
+																																					if (AddParentLocationDbId (grassroots_data_p, brapi_response_p))
+																																						{
+																																							if (AddParentLocationName (grassroots_data_p, brapi_response_p))
+																																								{
+																																									if (AddSiteStatus (grassroots_data_p, brapi_response_p))
+																																										{
+																																											if (AddSlope (grassroots_data_p, brapi_response_p))
+																																												{
+																																													if (AddTopography (grassroots_data_p, brapi_response_p))
+																																														{
+																																															return brapi_response_p;
+																																														}		/* if (AddTopography (grassroots_data_p, brapi_response_p)) */
 
-																									if (success_flag)
-																										{
-																											return brapi_address_p;
-																										}
+																																												}		/* if (AddSlope (grassroots_data_p, brapi_response_p)) */
 
-																								}
+																																										}		/* if (AddSiteStatus (grassroots_data_p, brapi_response_p)) */
 
-																						}		/* if (success_flag) */
+																																								}		/* if (AddParentLocationName (grassroots_data_p, brapi_response_p)) */
 
-																				}		/* if (SetValidString (brapi_address_p, "instituteAddress", address_s)) */
+																																						}		/* if (AddParentLocationDbId (grassroots_data_p, brapi_response_p)) */
 
-																			FreeCopiedString (address_s);
-																		}		/* if (address_s) */
+																																				}		/* if (AddLocationType (grassroots_data_p, brapi_response_p)) */
 
+																																		}		/* if (AddLocationName (grassroots_data_p, brapi_response_p)) */
 
-																}		/* if (SetValidString (brapi_address_p, "locationName", address_p -> ad_name_s)) */
+																																	FreeBSONOidString (id_s);
+																																}		/* if (id_s) */
 
-														}		/* if (SetValidString (brapi_address_p, "countryName", address_p -> ad_country_s)) */
+																														}		/* if (AddInstituteName (grassroots_data_p, brapi_response_p)) */
 
-												}		/* if (SetValidString (brapi_address_p, "countryCode", address_p -> ad_country_code_s)) */
+																												}		/* if (AddInstituteAddress (grassroots_data_p, brapi_response_p)) */
 
-										}
-									else		/* if (SetValidString (brapi_address_p, "locationType", "Breeding Location")) */
-										{
-											PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_address_p, "Failed to set locationType to \"Breeding Location\"");
-										}
+																										}		/* if (AddExternalReferences (grassroots_data_p, brapi_response_p)) */
 
-									json_decref (brapi_address_p);
-								}		/* if (brapi_address_p) */
+																								}		/* if (AddExposure (grassroots_data_p, brapi_response_p)) */
 
-							FreeAddress (address_p);
-						}		/* if (address_p) */
+																						}		/* if (AddEnvironmentType (grassroots_data_p, brapi_response_p)) */
 
-				}		/* if (src_address_p) */
+																				}		/* if (AddDocumentationURL (grassroots_data_p, brapi_response_p)) */
+
+																		}		/* if (AddCountryDetails (grassroots_data_p, brapi_response_p)) */
+
+																}		/* if (AddCoordinates (grassroots_data_p, brapi_response_p)) */
+
+														}		/* if (AddCoordinateUncertainty (grassroots_data_p, brapi_response_p)) */
+
+												}		/* if (AddCoordinateDescription (grassroots_data_p, brapi_response_p)) */
+
+										}		/* if (address_p) */
+
+								}		/* if (AddAdditionalInfo (grassroots_data_p, brapi_response_p)) */
+
+						}		/* if (AddAbbreviation (grassroots_data_p, brapi_response_p)) */
+
+					json_decref (brapi_response_p);
+				}		/* if (brapi_response_p) */
 
 		}		/* if (grassroots_data_p) */
-
 
 	return NULL;
 }
 
 
-static bool SetValidString (json_t *json_p, const char *key_s, const char *value_s)
-{
-	bool success_flag = true;
 
-	if (value_s)
+
+static bool AddAbbreviation (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "abbreviation"))
 		{
-			success_flag = SetJSONString (json_p, key_s, value_s);
+			success_flag = true;
 		}
 
 	return success_flag;
 }
 
 
+static bool AddAdditionalInfo (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "additionalInfo"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddCoordinateDescription (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "coordinateDescription"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddCoordinateUncertainty (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "coordinateUncertainty"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+
+/*
+	"coordinates": {
+			"geometry": {
+					"coordinates": [
+							-76.506042,
+							42.417373,
+							123
+					],
+					"type": "Point"
+			},
+			"type": "Feature"
+	},
+ */
+
+static bool AddCoordinates (const json_t *address_p, json_t *brapi_location_p)
+{
+	const json_t *address_location_p = json_object_get (address_p, AD_LOCATION_S);
+
+	if (address_location_p)
+		{
+			const json_t *centre_p = json_object_get (address_location_p, AD_CENTRE_LOCATION_S);
+
+			if (centre_p)
+				{
+					double latitude = 0.0;
+
+					if (GetJSONReal (centre_p, CO_LATITUDE_S, &latitude))
+						{
+							double longitude = 0.0;
+
+							if (GetJSONReal (centre_p, CO_LONGITUDE_S, &longitude))
+								{
+									json_t *coordinates_p = NULL;
+									bool altitude_flag = false;
+									double altitude = 0.0;
+
+									if (GetJSONReal (centre_p, CO_ELEVATION_S, &altitude))
+										{
+											altitude_flag = true;
+										}
+
+									coordinates_p = json_object ();
+
+									if (coordinates_p)
+										{
+											if (SetJSONString (coordinates_p, "type", "Feature"))
+												{
+													json_t *geometry_p = json_object ();
+
+													if (geometry_p)
+														{
+															if (json_object_set_new (coordinates_p, "geometry", geometry_p) == 0)
+																{
+																	if (SetJSONString (coordinates_p, "type", "Point"))
+																		{
+																			json_t *coords_array_p = json_array ();
+
+																			if (coords_array_p)
+																				{
+																					if (json_object_set_new (geometry_p, "coordinates", coords_array_p) == 0)
+																						{
+																							if (AddRealToJSONArray (coords_array_p, latitude))
+																								{
+																									if (AddRealToJSONArray (coords_array_p, longitude))
+																										{
+																											if (altitude_flag)
+																												{
+																													AddRealToJSONArray (coords_array_p, altitude);
+																												}
+
+																											if (json_object_set_new (brapi_location_p, "coordinates", coordinates_p) == 0)
+																												{
+																													return true;
+																												}
+																										}
+
+																								}
+																						}
+																					else
+																						{
+																							json_decref (coords_array_p);
+																						}
+
+																				}		/* if (coords_array_p) */
+
+																		}		/* if (SetJSONString (coordinates_p, "type", "Point")) */
+
+
+																}		/* if (geometry_p) */
+															else
+																{
+																	json_decref (geometry_p);
+																}
+
+														}		/* if (SetJSONString (coordinates_p, "type", "Point")) */
+
+												}		/* if (SetJSONString (coordinates_p, "type", "Feature")) */
+
+
+											json_decref (coordinates_p);
+
+										}		/* if (coordinates_p) */
+
+
+								}
+
+						}
+				}
+
+		}
+
+
+	return false;
+}
+
+
+
+
+static bool AddCountryDetails (const json_t *address_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+	bool done_flag = false;
+	const json_t *inner_address_p = json_object_get (address_p, AD_ADDRESS_S);
+	const char * const BRAPI_COUNTRY_CODE_S = "countryCode";
+	const char * const BRAPI_COUNTRY_NAME_S = "countryName";
+
+	if (inner_address_p)
+		{
+			const char *country_code_s = GetJSONString (inner_address_p, AD_COUNTRY_S);
+
+			if (country_code_s)
+				{
+					done_flag = true;
+
+					if (SetJSONString (brapi_location_p, BRAPI_COUNTRY_CODE_S, country_code_s))
+						{
+							const char *name_s = GetCountryNameFromCode (country_code_s);
+
+							if (name_s)
+								{
+									if (SetJSONString (brapi_location_p, BRAPI_COUNTRY_NAME_S, name_s))
+										{
+											success_flag = true;
+										}
+
+								}
+							else
+								{
+									if (SetJSONNull (brapi_location_p, BRAPI_COUNTRY_NAME_S))
+										{
+											success_flag = true;
+										}
+									else
+										{
+											PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_location_p, "Failed to add \"%s\": null", BRAPI_COUNTRY_NAME_S);
+										}
+
+								}
+
+
+						}		/* if (SetJSONString (brapi_location_p, BRAPI_COUNTRY_CODE_S, country_code_s)) */
+					else
+						{
+							PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_location_p, "Failed to add \"%s\": \"%s\"", BRAPI_COUNTRY_CODE_S, country_code_s);
+						}
+				}		/* if (country_code_s) */
+		}
+
+
+	if (!done_flag)
+		{
+			if (SetJSONNull (brapi_location_p, BRAPI_COUNTRY_CODE_S))
+				{
+					if (SetJSONNull (brapi_location_p, BRAPI_COUNTRY_NAME_S))
+						{
+							success_flag = true;
+						}
+				}
+			else
+				{
+					PrintJSONToErrors (STM_LEVEL_SEVERE, __FILE__, __LINE__, brapi_location_p, "Failed to add \"%s\": null", BRAPI_COUNTRY_CODE_S);
+				}
+		}
+
+	return success_flag;
+}
+
+
+
+static bool AddDocumentationURL (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "documentationURL"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddEnvironmentType (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (CopyJSONStringValue (brapi_location_p, LO_TYPE_S, brapi_location_p, "environmentType"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddExposure (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "exposure"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddExternalReferences (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "externalReferences"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddInstituteAddress (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "instituteAddress"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddInstituteName (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "instituteName"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static char *GetAndAddLocationDbId (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bson_oid_t id;
+
+	if (GetMongoIdFromJSON (grassroots_location_p, &id))
+		{
+			char *id_s = GetBSONOidAsString (&id);
+
+			if (id_s)
+				{
+					if (SetJSONString (brapi_location_p, "locationDbId", id_s))
+						{
+							return id_s;
+						}
+
+					FreeBSONOidString (id_s);
+				}
+		}
+
+	return NULL;
+}
+
+
+
+
+static bool AddLocationName (const json_t *parent_programme_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (CopyJSONStringValue (parent_programme_p, PR_NAME_S, brapi_location_p, "locationName"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddLocationType (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "locationType"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddParentLocationDbId (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "parentLocationDbId"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+
+
+static bool AddParentLocationName (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "parentLocationName"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddSiteStatus (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "siteStatus"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+static bool AddSlope (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "slope"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+
+static bool AddTopography (const json_t *grassroots_location_p, json_t *brapi_location_p)
+{
+	bool success_flag = false;
+
+	if (SetJSONNull (brapi_location_p, "topography"))
+		{
+			success_flag = true;
+		}
+
+	return success_flag;
+}
+
+
+
+static bool AddRealToJSONArray (json_t *array_p, const double value)
+{
+	json_t *value_p = json_real (value);
+
+	if (value_p)
+		{
+			if (json_array_append_new (array_p, value_p) == 0)
+				{
+					return true;
+				}
+
+			json_decref (value_p);
+		}
+
+	return false;
+}
 
