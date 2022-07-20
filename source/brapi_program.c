@@ -324,15 +324,28 @@ static bool AddFundingInformation (const json_t *grassroots_programme_p, json_t 
 static bool AddLeadPerson (const json_t *grassroots_programme_p, json_t *brapi_programme_p)
 {
 	bool success_flag = false;
-	const json_t *pi_p = json_object_get (grassroots_programme_p, PR_PI_S);
 
-	if (pi_p)
+	if (SetJSONNull (brapi_programme_p, "leadPersonDbId"))
 		{
-			if (CopyJSONStringValue (pi_p, PE_NAME_S, brapi_programme_p, "leadPersonName"))
+			const json_t *pi_p = json_object_get (grassroots_programme_p, PR_PI_S);
+			const char *key_s = "leadPersonName";
+
+			if (pi_p)
 				{
-					success_flag = true;
+					if (CopyJSONStringValue (pi_p, PE_NAME_S, brapi_programme_p, key_s))
+						{
+							success_flag = true;
+						}
+				}		/* if (pi_p) */
+			else
+				{
+					if (SetJSONNull (brapi_programme_p, key_s))
+						{
+							success_flag = true;
+						}
 				}
-		}		/* if (pi_p) */
+		}
+
 
 	return success_flag;
 }
