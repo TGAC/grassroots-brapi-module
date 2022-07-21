@@ -24,7 +24,7 @@
 | parentLocationName | no |   |
 | siteStatus | no |  | 
 | slope | no |  |
-| topography | no | Grassroots only has the year  |
+| topography | no |   |
         
         
 ## Non-BrAPI Grassroots attributes:
