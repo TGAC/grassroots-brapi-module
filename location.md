@@ -33,7 +33,7 @@
 | :--------- | :--------- |
 | Street | The street name of this Location | 
 | Town | The town/city of this Location | 
-| County | The county/regiion of this Location  | 
+| County | The county/region of this Location  | 
 | Postal Code | The postal/zip code of this Location  | 
 | Soil | Any notes aboutthe type of soil at this Location | 
 | Type | The type of location such as farm or site, *etc.* | 

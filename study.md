@@ -30,7 +30,7 @@
 | studyDescription | yes |  |
 | studyName | yes |  |
 | studyPUI | yes | |
-| studyType | no | Study Types do not currently exist for Studies in Grassrootss |
+| studyType | no | Study Types do not currently exist for Studies in Grassroots |
 | trialDbId | yes | | 
 | trialName | yes |  |
 
