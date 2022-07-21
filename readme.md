@@ -73,3 +73,4 @@ Information on the current level of BrAPI compatibility for the various datatype
  * [Programs](program.md)
  * [Trials](trial.md)
  * [Studies](study.md)
+ * [Locations](location.md)
