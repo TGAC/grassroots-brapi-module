@@ -50,7 +50,7 @@
 | Phenotype Gathering Notes | Notes on how the Phenotype information was gathered | 
 | Weather | Link out to the weather data for this Study | 
 | Study Photo | The web address of a photo or image to represent the study | 
-| Image Collection Notes | Details about any images collected" | 
+| Image Collection Notes | Details about any images collected | 
 
 The number of rows, columns of Plots along with their horizontal & vertical gaps, plots per block and the horizontal & vertical gaps between these blocks are also stored in Grassroots.
 
