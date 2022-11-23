@@ -35,7 +35,7 @@
 | Town | The town/city of this Location | 
 | County | The county/region of this Location  | 
 | Postal Code | The postal/zip code of this Location  | 
-| Soil | Any notes aboutthe type of soil at this Location | 
+| Soil | Any notes about the type of soil at this Location | 
 | Type | The type of location such as farm or site, *etc.* | 
 | Minumum pH | The lower bound of the soil's pH range at this Location | 
 | Maximum pH | The upper bound of the soil's pH range at this Location | 
