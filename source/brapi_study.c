@@ -415,7 +415,7 @@ static bool AddActive (const json_t *grassroots_study_p, json_t *brapi_study_p)
 	bool success_flag = false;
 	struct tm current_time;
 
-	if (GetCurrentTime (&current_time))
+	if (GetPresentTime (&current_time))
 		{
 			const uint32 current_year = ((uint32) current_time.tm_year) + 1900;
 			uint32 sowing_year = 0;
