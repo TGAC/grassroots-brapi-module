@@ -2,22 +2,21 @@
 # Create a file called user.prefs by copying the example-user.prefs file
 # to user.prefs and editing its values.
 #
-DIR_BUILD :=  $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
-DIR_SRC := $(realpath $(DIR_BUILD)/../../source)
-DIR_INCLUDE := $(realpath $(DIR_BUILD)/../../include)
+DIR_BUILD :=  $(realpath $(dir $(lastword $(MAKEFILE_LIST)))/$(PLATFORM))
+DIR_SRC := $(realpath $(DIR_BUILD)/../../../source)
+DIR_INCLUDE := $(realpath $(DIR_BUILD)/../../../include)
 
 ifeq ($(DIR_BUILD_CONFIG),)
-export DIR_BUILD_CONFIG := $(realpath $(DIR_BUILD)/../../../../build-config/linux)
+export DIR_BUILD_CONFIG = $(realpath $(DIR_BUILD)/../../../../../build-config/unix/)
+#export DIR_BUILD_CONFIG = /Users/tyrrells/Projects/grassroots/build-config/unix/
 endif
 
+include $(DIR_BUILD_CONFIG)/project.properties
+-include $(DIR_BUILD)/user.prefs
 
--include user.prefs
-
-MODNAME      ?= grassroots_brapi
-SHARED_FNAME := mod_$(MODNAME).so
+NAME := grassroots_brapi
 CC	:= gcc
 OUTPUT_DIR	 := out
-SHARED       := $(OUTPUT_DIR)/$(SHARED_FNAME)
 
 APXS := $(DIR_APACHE)/bin/apxs
 
@@ -37,18 +36,17 @@ INSTALLED    := $(INSTALL_DIR)/mod_$(MODNAME).so
 BUILD_DIR := build
 
 CFILES := \
-	brapi_method.c \
-	brapi_module.c \
-	brapi_location.c \
-	brapi_program.c \
-	brapi_study.c \
-	brapi_trait.c \
-	brapi_trial.c
+	$(DIR_SRC)/brapi_method.c \
+	$(DIR_SRC)/brapi_module.c \
+	$(DIR_SRC)/brapi_location.c \
+	$(DIR_SRC)/brapi_program.c \
+	$(DIR_SRC)/brapi_study.c \
+	$(DIR_SRC)/brapi_trait.c \
+	$(DIR_SRC)/brapi_trial.c
 
 VPATH := $(DIR_SRC)
 HFILES := $(CFILES:%.c=%.h)
 SRCFILES := $(CFILES) $(HFILES)
-OBJFILES := $(CFILES:%.c=$(OUTPUT_DIR)/%.o)
 
 INCLUDE_PATHS += \
 	$(DIR_INCLUDE) \
@@ -75,12 +73,14 @@ INCLUDE_PATHS += \
 	$(FIELD_TRIAL_SERVICE_PATH)/include
 
 
-LIB_PATHS += $\
+LIB_PATHS += \
 	$(DIR_GRASSROOTS_INSTALL)/lib \
 	$(DIR_GRASSROOTS_INSTALL)/services \
 	$(DIR_JANSSON_LIB) \
+	$(DIR_MONGODB_LIB) \
 	$(DIR_GRASSROOTS_UUID_LIB) \
-	$(DIR_UUID_LIB) 
+	$(DIR_UUID_LIB) \
+	$(DIR_APACHE)/lib
 
 
 LIBS += \
@@ -90,12 +90,17 @@ LIBS += \
 	$(GRASSROOTS_NETWORK_LIB_NAME) \
 	$(GRASSROOTS_MONGODB_LIB_NAME) \
 	$(GRASSROOTS_UUID_LIB_NAME) \
+	$(GRASSROOTS_SERVER_LIB_NAME) \
+	$(GRASSROOTS_SERVICES_LIB_NAME) \
 	uuid \
 	jansson \
+	aprutil-1.0 \
+	apr-1.0 \
+	mongoc-1.0
 	
 MACROS := \
-	UNIX \
-	
+	$(PLATFORM) \
+
 WARNINGS :=                           \
 	all                           \
 	extra                         \
@@ -105,19 +110,27 @@ WARNINGS :=                           \
 	fatal-errors \
 	shadow
 
+
+CFLAGS 	+=  -Wc,-Wall  -Wc,-fpic
+
+ifeq ($(BUILD),release)
+	CFLAGS 	+= -Wc,-O3 -Wc,-s
+ 	LDFLAGS += Wl,-s
+else
+	CFLAGS 	+= -Wc,-g -Wc,-Wall -Wc,-O0
+	LDFLAGS += -Wl,pg
+	CPPFLAGS += -Wc,-D_DEBUG
+endif
+
+
 CFLAGS +=                              \
-	-g3                            \
-	-ggdb                          \
-	-O0							\
-	-pedantic                      \
-	$(addprefix -W, $(WARNINGS))   \
 	$(addprefix -D, $(MACROS)) \
-	$(addprefix -I, $(INCLUDE_PATHS))
+	$(addprefix -I, $(INCLUDE_PATHS)) 
 
 LDFLAGS +=                           \
 	$(addprefix -l, $(LIBS))     \
 	$(addprefix -L, $(LIB_PATHS)) \
-	-shared 
+
 
 comma := ,
 
@@ -131,15 +144,11 @@ all: init shared
 init:
 	mkdir -p $(OUTPUT_DIR)
 
-install: $(SHARED)
+install: shared
 	cp $(SHARED) $(INSTALL_DIR)/
 
-shared: $(SHARED)
-
-$(SHARED): init $(OBJFILES)
-	@echo "LIB_PATHS: $(LIB_PATHS)"
-	@echo "OBJFILES: $(OBJFILES)"
-	$(LD) -o $(SHARED) $(OBJFILES) $(STATIC_LIBS) $(LDFLAGS)
+shared: init $(OBJFILES)
+	$(APXS) -n $(NAME) $(INCLUDES) -D UNIX=1 -D BUILD=$(BUILD) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -c $(CFILES)
 
 clean:
 	rm -rvf $(OUTPUT_DIR)/*
@@ -151,7 +160,17 @@ clean:
 #	$(addprefix -Wl$(comma), $(LDFLAGS)) \
 #	-o $(SHARED_FNAME) $(SRCFILES)  
 
-$(OUTPUT_DIR)/%.o: %.c 
-	$(CC) -c $(CFLAGS) $(CPPFLAGS) -fPIC -DLINUX -D_REENTRANT -D_GNU_SOURCE $< -o $@
+# Compile and generate dependency info
+# 1. Compile the .c file
+# 2. Generate dependency information, explicitly specifying the target name
+$(DIR_OBJS)/%.o : %.c
+	@echo ">>> c build for $@"
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ -c $<
+	$(MAKEDEPEND) $(basename $@).d -MT $(basename $@).o $(CPPFLAGS) $(CFLAGS) $<  
+	@mv -f $(basename $@).d $(basename $@).d.tmp
+	@sed -e 's|.*:|$*.o:|' < $(basename $@).d.tmp > $(basename $@).d
+	@sed -e 's/.*://' -e 's/\\$$//' < $(basename $@).d.tmp | fmt -1 | \
+		sed -e 's/^ *//' -e 's/$$/:/' >> $(basename $@).d
+	@rm -f $(basename $@).d.tmp   	
 
 
