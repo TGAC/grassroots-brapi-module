@@ -40,7 +40,6 @@
 #include "http_protocol.h"
 #include "http_request.h"
 
-module AP_MODULE_DECLARE_DATA grassroots_brapi_module;
 
 
 typedef enum
